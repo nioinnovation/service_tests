@@ -1,3 +1,4 @@
+import re
 import requests
 from threading import Event
 from nio import Block
@@ -11,6 +12,20 @@ from service_tests.router import ServiceTestRouter
 
 
 class NioServiceTestCase(NIOTestCase):
+    """Base test case for n.io services
+
+    To use:
+        * Override class variable `service_name`.
+        * If testing by publishing to subscriber, override `subscriber_topics`.
+            Publish this signals with `publish_signals(topic, signals)`.
+        * If asserting against publised signals, override `publisher_topics`
+            Get published signals with `published_signals`.
+        * If you need to change block config for a test, override
+            `override_block_configs`
+        * Use `wait_for_published_signals(self, count=0, timeout=1)` instead
+            of sleep
+        * Set n.io environement variables with `env_vars`.
+    """
 
     service_name = None
 
@@ -27,6 +42,25 @@ class NioServiceTestCase(NIOTestCase):
         # Allow tests to publish signals to any subscriber
         self._publishers = {}
 
+    def publisher_topics(self):
+        """Topics this service publishes to"""
+        return []
+
+    def subscriber_topics(self):
+        """Topics this service subscribes to"""
+        return []
+
+    def publish_signals(self, topic, signals):
+        self._publishers[topic].send(signals)
+
+    def override_block_configs(self):
+        """Optionally override block config for the tests"""
+        return {}
+
+    def env_vars(self):
+        """Optionally override to set environment variable values"""
+        return {}
+
     def get_test_modules(self):
         return {'settings', 'scheduler', 'persistence', 'communication'}
 
@@ -41,6 +75,10 @@ class NioServiceTestCase(NIOTestCase):
 
     def setUp(self):
         super().setUp()
+        self._setup_blocks()
+        self._setup_pubsub()
+
+    def _setup_blocks(self):
         # Instantiate and configure blocks
         blocks = Discover.discover_classes('blocks', Block)
         service_block_names = [service_block["name"] for service_block in \
@@ -62,6 +100,7 @@ class NioServiceTestCase(NIOTestCase):
             block = [block for block in blocks if \
                      block.__name__ == block_config["type"]][0]()
             block_config = self._override_block_config(block_config)
+            block_config = self._replace_env_vars(block_config)
             block.configure(BlockContext(
                 self._router, block_config, 'TestSuite', ''))
             self._blocks[service_block_name] = block
@@ -72,8 +111,34 @@ class NioServiceTestCase(NIOTestCase):
         # Start blocks
         for block in self._blocks:
             self._blocks[block].start()
-        # Init publishers and subscribers for tests
-        self._setup_pubsub()
+
+    def _replace_env_vars(self, config):
+        """Return config with environment vatriables swapped out"""
+        for var in self.env_vars():
+            config = \
+                self._replace_env_var(config, var, self.env_vars()[var])
+        return config
+
+    def _replace_env_var(self, config, name, value):
+        for property in config:
+            if isinstance(config[property], str):
+                config[property] = re.sub("\[\[" + name + "\]\]",
+                                          str(value),
+                                          config[property])
+            elif isinstance(config[property], dict):
+                self._replace_env_var(config[property], name, value)
+            elif isinstance(config[property], list):
+                new_list = []
+                for item in config[property]:
+                    if isinstance(item, str):
+                        new_list.append(re.sub("\[\[" + name + "\]\]",
+                                               str(value),
+                                               item))
+                    elif isinstance(item, dict):
+                        new_list.append(
+                                self._replace_env_var(item, name, value))
+                config[property] = new_list
+        return config
 
     def tearDown(self):
         super().tearDown()
@@ -82,14 +147,6 @@ class NioServiceTestCase(NIOTestCase):
         # Stop blocks
         for block in self._blocks:
             self._blocks[block].stop()
-
-    def publisher_topics(self):
-        """Topics this service publishes to"""
-        return []
-
-    def subscriber_topics(self):
-        """Topics this service subscribes to"""
-        return []
 
     def _setup_pubsub(self):
         # Supscribe to published signals
@@ -113,18 +170,11 @@ class NioServiceTestCase(NIOTestCase):
             self._publishers[publisher].close()
         self._publisher_event = Event()
 
-    def publish_signals(self, topic, signals):
-        self._publishers[topic].send(signals)
-
     def _published_signals(self, signals):
         # Save published signals for assertions
         self.published_signals.extend(signals)
         self._publisher_event.set()
         self._publisher_event.clear()
-
-    def override_block_configs(self):
-        """Optionally override block config for the tests"""
-        return {}
 
     def _override_block_config(self, block_config):
         new_block_config = self.override_block_configs().get(
