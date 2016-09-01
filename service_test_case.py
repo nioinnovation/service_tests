@@ -179,8 +179,9 @@ class NioServiceTestCase(NIOTestCase):
     def _override_block_config(self, block_config):
         new_block_config = self.override_block_configs().get(
             block_config["name"], block_config)
-        new_block_config["name"] = block_config["name"]
-        return new_block_config
+        for property in new_block_config:
+            block_config[property] = new_block_config[property]
+        return block_config
 
     def wait_for_published_signals(self, count=0, timeout=1):
         """Wait for the specified number of signals to be published
