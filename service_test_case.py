@@ -198,4 +198,5 @@ class NioServiceTestCase(NIOTestCase):
         else:
             # Wait for specified number of signals
             while(count > len(self.published_signals)):
-                self._publisher_event.wait(timeout)
+                if not self._publisher_event.wait(timeout):
+                    return
