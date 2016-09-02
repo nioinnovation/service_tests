@@ -1,6 +1,7 @@
 import re
 import requests
 from threading import Event
+from unittest.mock import MagicMock
 from nio import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
@@ -25,6 +26,9 @@ class NioServiceTestCase(NIOTestCase):
         * Use `wait_for_published_signals(self, count=0, timeout=1)` instead
             of sleep
         * Set n.io environement variables with `env_vars`.
+        * Mock blocks with `moock_block` by mapping block names to mocked
+            process_signals method for that block.
+        * Test by notifying signals from a block with `notify_signals`
     """
 
     service_name = None
@@ -42,6 +46,10 @@ class NioServiceTestCase(NIOTestCase):
         # Allow tests to publish signals to any subscriber
         self._publishers = {}
 
+    @property
+    def processed_signals(self):
+        return self._router._processed_signals
+
     def publisher_topics(self):
         """Topics this service publishes to"""
         return []
@@ -52,6 +60,18 @@ class NioServiceTestCase(NIOTestCase):
 
     def publish_signals(self, topic, signals):
         self._publishers[topic].send(signals)
+
+    def notify_signals(self, block_name, signals):
+        self._router.notify_signals(
+            self._blocks[block_name], signals, "__default_terminal_value")
+
+    def mock_blocks(self):
+        """Optionally create a mocked block class instead of the real thing
+        Return:
+            dict(block_name, process_signals): map blocks to the method to be
+                called when that block's process_signals is called.
+        """
+        return {}
 
     def override_block_configs(self):
         """Optionally override block config for the tests"""
@@ -97,8 +117,7 @@ class NioServiceTestCase(NIOTestCase):
             # use mapping name for block
             block_config["name"] = service_block_name
             # instantiate the block
-            block = [block for block in blocks if \
-                     block.__name__ == block_config["type"]][0]()
+            block = self._init_block(block_config, blocks)
             block_config = self._override_block_config(block_config)
             block_config = self._replace_env_vars(block_config)
             block.configure(BlockContext(
@@ -111,6 +130,17 @@ class NioServiceTestCase(NIOTestCase):
         # Start blocks
         for block in self._blocks:
             self._blocks[block].start()
+
+    def _init_block(self, block_config, blocks):
+        if block_config["name"] in self.mock_blocks():
+            block = MagicMock()
+            block.name.return_value = block_config["name"]
+            block.process_signals.side_effect = \
+                self.mock_blocks()[block_config["name"]]
+        else:
+            block = [block for block in blocks if \
+                     block.__name__ == block_config["type"]][0]()
+        return block
 
     def _replace_env_vars(self, config):
         """Return config with environment vatriables swapped out"""
