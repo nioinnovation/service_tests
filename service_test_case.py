@@ -151,14 +151,14 @@ class NioServiceTestCase(NIOTestCase):
     def _setup_pubsub(self):
         # Supscribe to published signals
         for publisher_topic in self.publisher_topics():
-            self._subscribers[str(publisher_topic)] = \
-                    Subscriber(self._published_signals, **publisher_topic)
+            self._subscribers[publisher_topic] = \
+                    Subscriber(self._published_signals, topic=publisher_topic)
         for subscriber in self._subscribers:
             self._subscribers[subscriber].open()
         # Allow tests to publish to subscribers in service
         for subscriber_topic in self.subscriber_topics():
-            self._publishers[str(subscriber_topic)] = \
-                    Publisher(**subscriber_topic)
+            self._publishers[subscriber_topic] = \
+                    Publisher(topic=subscriber_topic)
         for publisher in self._publishers:
             self._publishers[publisher].open()
 
