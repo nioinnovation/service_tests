@@ -1,8 +1,5 @@
-from threading import Event
-from nio.modules.communication.subscriber import Subscriber
-from nio.modules.communication.publisher import Publisher
 from nio.signal.base import Signal
-from service_tests.service_test_case import NioServiceTestCase
+from service_test_case import NioServiceTestCase
 
 
 class TestExample(NioServiceTestCase):
