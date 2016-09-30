@@ -1,6 +1,7 @@
 import os
 import re
 import requests
+import sys
 from threading import Event
 from unittest.mock import MagicMock
 from nio import Block
@@ -36,7 +37,6 @@ class NioServiceTestCase(NIOTestCase):
     """
 
     service_name = None
-    cfg_dir = "{}/{}/".format(os.path.dirname(__file__), "etc")
 
     def __init__(self, methodName='runTests'):
         super().__init__(methodName)
@@ -101,7 +101,10 @@ class NioServiceTestCase(NIOTestCase):
     def get_context(self, module_name, module):
         if module_name == "persistence":
             context = ModuleContext()
-            context.root_folder = self.cfg_dir
+            context.root_folder = "{}/../{}".format(
+                os.path.dirname(
+                    sys.modules[self.__class__.__module__].__file__),
+                "etc")
             context.root_id = ''
             context.format = Persistence.Format.json.value
             return context
