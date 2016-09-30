@@ -6,8 +6,8 @@ class TestServiceTestCase(NioServiceTestCase):
 
     def test_block_and_service_configs_are_loaded_from_files(self):
         """Block and service config files are loaded from etc directory"""
-        self.assertTrue(self.block_configs)
-        self.assertTrue(self.service_configs)
+        self.assertGreater(len(self.block_configs), 0)
+        self.assertGreater(len(self.service_configs), 0)
 
     def test_replace_env_vars(self):
         """Configuration with variables gets replaced with value"""
