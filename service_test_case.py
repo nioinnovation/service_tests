@@ -12,9 +12,9 @@ from nio.modules.context import ModuleContext
 from nio.testing.test_case import NIOTestCase
 from nio.router.context import RouterContext
 from niocore.core.loader.discover import Discover
-from service_tests.router import ServiceTestRouter
-from service_tests.module_persistence_file.module import FilePersistenceModule
-from service_tests.module_persistence_file.persistence import Persistence
+from .router import ServiceTestRouter
+from .module_persistence_file.module import FilePersistenceModule
+from .module_persistence_file.persistence import Persistence
 
 
 class NioServiceTestCase(NIOTestCase):
