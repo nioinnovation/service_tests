@@ -1,5 +1,5 @@
 from nio.signal.base import Signal
-from service_test_case import NioServiceTestCase
+from .service_test_case import NioServiceTestCase
 
 
 class TestExample(NioServiceTestCase):
