@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-from ..service_test_case import NioServiceTestCase
+from service_tests.service_test_case import NioServiceTestCase
 
 class TestServiceTestCase(NioServiceTestCase):
 
