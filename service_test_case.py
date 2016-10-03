@@ -9,7 +9,7 @@ from nio.modules.communication.subscriber import Subscriber
 from nio.testing.test_case import NIOTestCase
 from nio.router.context import RouterContext
 from niocore.core.loader.discover import Discover
-from service_tests.router import ServiceTestRouter
+from .router import ServiceTestRouter
 
 
 class NioServiceTestCase(NIOTestCase):
