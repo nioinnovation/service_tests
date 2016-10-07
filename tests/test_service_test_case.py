@@ -1,4 +1,3 @@
-import unittest
 from unittest.mock import MagicMock
 from ..service_test_case import NioServiceTestCase
 

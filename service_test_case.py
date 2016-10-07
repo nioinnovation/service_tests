@@ -30,8 +30,8 @@ class NioServiceTestCase(NIOTestCase):
             `override_block_configs`
         * Use `wait_for_published_signals(self, count=0, timeout=1)` instead
             of sleep
-        * Set n.io environement variables with `env_vars`.
-        * Mock blocks with `moock_block` by mapping block names to mocked
+        * Set n.io environment variables with `env_vars`.
+        * Mock blocks with `mock_blocks` by mapping block names to mocked
             process_signals method for that block.
         * Test by notifying signals from a block with `notify_signals`
     """
@@ -67,9 +67,9 @@ class NioServiceTestCase(NIOTestCase):
     def publish_signals(self, topic, signals):
         self._publishers[topic].send(signals)
 
-    def notify_signals(self, block_name, signals):
+    def notify_signals(self, block_name, signals, terminal="__default_terminal_value"):
         self._router.notify_signals(
-            self._blocks[block_name], signals, "__default_terminal_value")
+            self._blocks[block_name], signals, terminal)
 
     def mock_blocks(self):
         """Optionally create a mocked block class instead of the real thing
@@ -256,3 +256,4 @@ class NioServiceTestCase(NIOTestCase):
             while(count > len(self.published_signals)):
                 if not self._publisher_event.wait(timeout):
                     return
+
