@@ -1,20 +1,13 @@
 import unittest
 from unittest.mock import MagicMock
-from service_tests.service_test_case import NioServiceTestCase
+from ..service_test_case import NioServiceTestCase
 
 class TestServiceTestCase(NioServiceTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.block_configs = []
-        cls.service_config = {}
-
-    def setUp(self):
-        pass
-
-    @classmethod
-    def tearDownClass(cls):
-        pass
+    def test_block_and_service_configs_are_loaded_from_files(self):
+        """Block and service config files are loaded from etc directory"""
+        self.assertGreater(len(self.block_configs), 0)
+        self.assertGreater(len(self.service_configs), 0)
 
     def test_replace_env_vars(self):
         """Configuration with variables gets replaced with value"""

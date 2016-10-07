@@ -1,15 +1,20 @@
+import os
 import re
 import requests
+import sys
 from threading import Event
 from unittest.mock import MagicMock
 from nio import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
+from nio.modules.context import ModuleContext
 from nio.testing.test_case import NIOTestCase
 from nio.router.context import RouterContext
 from niocore.core.loader.discover import Discover
-from service_tests.router import ServiceTestRouter
+from .router import ServiceTestRouter
+from .module_persistence_file.module import FilePersistenceModule
+from .module_persistence_file.persistence import Persistence
 
 
 class NioServiceTestCase(NIOTestCase):
@@ -82,30 +87,45 @@ class NioServiceTestCase(NIOTestCase):
         """Optionally override to set environment variable values"""
         return {}
 
+    def setUp(self):
+        super().setUp()
+        persistence = Persistence()
+        self.block_configs = persistence.load_collection("blocks")
+        self.service_configs = persistence.load_collection("services")
+        self.service_config = self.service_configs.get(self.service_name, {})
+        self._setup_blocks()
+        self._setup_pubsub()
+
     def get_test_modules(self):
         return {'settings', 'scheduler', 'persistence', 'communication'}
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.block_configs = requests.get('http://127.0.0.1:8181/blocks',
-                                         auth=('Admin', 'Admin')).json()
-        cls.service_config = requests.get('http://127.0.0.1:8181/services/{}'
-                                          .format(cls.service_name),
-                                          auth=('Admin', 'Admin')).json()
+    def get_context(self, module_name, module):
+        if module_name == "persistence":
+            context = ModuleContext()
+            context.root_folder = "{}/../{}".format(
+                os.path.dirname(
+                    sys.modules[self.__class__.__module__].__file__),
+                "etc")
+            context.root_id = ''
+            context.format = Persistence.Format.json.value
+            return context
+        else:
+            return super().get_context(module_name, module)
 
-    def setUp(self):
-        super().setUp()
-        self._setup_blocks()
-        self._setup_pubsub()
+    def get_module(self, module_name):
+        """ Override to use the file persistence """
+        if module_name == "persistence":
+            return FilePersistenceModule()
+        else:
+            return super().get_module(module_name)
 
     def _setup_blocks(self):
         # Instantiate and configure blocks
         blocks = Discover.discover_classes('blocks', Block)
         service_block_names = [service_block["name"] for service_block in \
-                               self.service_config["execution"]]
+                               self.service_config.get("execution", [])]
         service_block_mappings = {}
-        for mapping in self.service_config["mappings"]:
+        for mapping in self.service_config.get("mappings", []):
             service_block_mappings[mapping["name"]] = mapping["mapping"]
         for service_block_name in service_block_names:
             # get mapping name or leave original name
@@ -126,7 +146,7 @@ class NioServiceTestCase(NIOTestCase):
             self._blocks[service_block_name] = block
         # Configure router
         self._router.configure(RouterContext(
-            execution=self.service_config["execution"],
+            execution=self.service_config.get("execution", []),
             blocks=self._blocks))
         # Start blocks
         if self.auto_start:
