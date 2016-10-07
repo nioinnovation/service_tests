@@ -32,6 +32,7 @@ class NioServiceTestCase(NIOTestCase):
     """
 
     service_name = None
+    auto_start = True
 
     def __init__(self, methodName='runTests'):
         super().__init__(methodName)
@@ -127,6 +128,11 @@ class NioServiceTestCase(NIOTestCase):
         self._router.configure(RouterContext(
             execution=self.service_config["execution"],
             blocks=self._blocks))
+        # Start blocks
+        if self.auto_start:
+            self.start()
+
+    def start(self):
         # Start blocks
         for block in self._blocks:
             self._blocks[block].start()
