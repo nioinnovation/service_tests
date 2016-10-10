@@ -16,6 +16,9 @@ from .router import ServiceTestRouter
 from .module_persistence_file.module import FilePersistenceModule
 from .module_persistence_file.persistence import Persistence
 
+Persistence.save = MagicMock()
+Persistence.save_collection = MagicMock()
+
 
 class NioServiceTestCase(NIOTestCase):
     """Base test case for n.io services
