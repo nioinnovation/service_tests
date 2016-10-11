@@ -29,9 +29,7 @@ class ServiceTestRouter(BlockRouter):
             input_id  = receiver["input"]
             to_block = self._blocks[receiver_name]
             print("{} -> {}".format(from_block_name, receiver_name))
-            cloned_signals = []
-            for signal in signals:
-                cloned_signals.append(Signal(deepcopy(signal.to_dict())))
+            cloned_signals = deepcopy(signals)
             if input_id == "__default_terminal_value":
                 # don't include input_id if it's default terminal
                 spawn(to_block.process_signals, cloned_signals)
