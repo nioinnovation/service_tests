@@ -11,6 +11,7 @@ from nio.modules.communication.subscriber import Subscriber
 from nio.modules.context import ModuleContext
 from nio.testing.test_case import NIOTestCase
 from nio.router.context import RouterContext
+from nio.util.discovery import is_class_discoverable as _is_class_discoverable
 from niocore.core.loader.discover import Discover
 from .router import ServiceTestRouter
 from .module_persistence_file.module import FilePersistenceModule
@@ -18,6 +19,10 @@ from .module_persistence_file.persistence import Persistence
 
 Persistence.save = MagicMock()
 Persistence.save_collection = MagicMock()
+
+
+def is_class_discoverable(_class, default_discoverability=True):
+    return _is_class_discoverable(_class, default_discoverability)
 
 
 class NioServiceTestCase(NIOTestCase):
@@ -124,7 +129,8 @@ class NioServiceTestCase(NIOTestCase):
 
     def _setup_blocks(self):
         # Instantiate and configure blocks
-        blocks = Discover.discover_classes('blocks', Block)
+        blocks = Discover.discover_classes('blocks', Block, is_class_discoverable)
+        print(blocks)
         service_block_names = [service_block["name"] for service_block in \
                                self.service_config.get("execution", [])]
         service_block_mappings = {}
