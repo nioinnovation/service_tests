@@ -130,7 +130,6 @@ class NioServiceTestCase(NIOTestCase):
     def _setup_blocks(self):
         # Instantiate and configure blocks
         blocks = Discover.discover_classes('blocks', Block, is_class_discoverable)
-        print(blocks)
         service_block_names = [service_block["name"] for service_block in \
                                self.service_config.get("execution", [])]
         service_block_mappings = {}
