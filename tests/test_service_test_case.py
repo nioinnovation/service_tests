@@ -44,6 +44,3 @@ class TestServiceTestCase(NioServiceTestCase):
                 },
             }
         )
-
-    def test_discovers_discoverable(self):
-        pass
