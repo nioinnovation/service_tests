@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 from ..service_test_case import NioServiceTestCase
 
+
 class TestServiceTestCase(NioServiceTestCase):
 
     def test_block_and_service_configs_are_loaded_from_files(self):
