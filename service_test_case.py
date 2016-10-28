@@ -1,6 +1,5 @@
 import os
 import re
-import requests
 import sys
 from threading import Event
 from unittest.mock import MagicMock
@@ -265,3 +264,11 @@ class NioServiceTestCase(NIOTestCase):
                 if not self._publisher_event.wait(timeout):
                     return
 
+    def command_block(self, block_name, command):
+        try:
+            command = getattr(self._blocks[block_name], command)
+        except Exception as e:
+            raise AssertionError('Could not get block command: %s' % command,
+                                 e)
+        else:
+            command()
