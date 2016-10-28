@@ -103,6 +103,9 @@ class NioServiceTestCase(NIOTestCase):
         self.service_config = self.service_configs.get(self.service_name, {})
         self._setup_blocks()
         self._setup_pubsub()
+        # Start blocks
+        if self.auto_start:
+            self.start()
 
     def get_test_modules(self):
         return {'settings', 'scheduler', 'persistence', 'communication'}
@@ -156,9 +159,6 @@ class NioServiceTestCase(NIOTestCase):
         self._router.configure(RouterContext(
             execution=self.service_config.get("execution", []),
             blocks=self._blocks))
-        # Start blocks
-        if self.auto_start:
-            self.start()
 
     def start(self):
         # Start blocks
