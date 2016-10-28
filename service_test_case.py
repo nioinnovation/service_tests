@@ -264,11 +264,11 @@ class NioServiceTestCase(NIOTestCase):
                 if not self._publisher_event.wait(timeout):
                     return
 
-    def command_block(self, block_name, command):
+    def command_block(self, block_name, command_name):
         try:
-            command = getattr(self._blocks[block_name], command)
+            command = getattr(self._blocks[block_name], command_name)
         except Exception as e:
-            raise AssertionError('Could not get block command: %s' % command,
-                                 e)
+            raise AssertionError('Could not get block command: %s' %
+                                 command_name, e)
         else:
             command()
