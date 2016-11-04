@@ -58,6 +58,8 @@ class NioServiceTestCase(NIOTestCase):
         self._publisher_event = Event()
         # Allow tests to publish signals to any subscriber
         self._publishers = {}
+        # Set an event when blocks process signals
+        self._processed_event = Event()
 
     @property
     def processed_signals(self):
@@ -102,6 +104,7 @@ class NioServiceTestCase(NIOTestCase):
         self.service_config = self.service_configs.get(self.service_name, {})
         self._setup_blocks()
         self._setup_pubsub()
+        self._setup_processed()
         # Start blocks
         if self.auto_start:
             self.start()
@@ -246,6 +249,15 @@ class NioServiceTestCase(NIOTestCase):
             block_config[property] = new_block_config[property]
         return block_config
 
+    def _processed_signals(self):
+        self._processed_event.set()
+        self._processed_event.clear()
+
+    def _setup_processed(self):
+        # wrap every blocks (including mocked blocks) process_signals
+        # function with a custom one that calls _processed_signals upon exit.
+        
+
     def wait_for_published_signals(self, count=0, timeout=1):
         """Wait for the specified number of signals to be published
 
@@ -262,6 +274,14 @@ class NioServiceTestCase(NIOTestCase):
             # Wait for specified number of signals
             while(count > len(self.published_signals)):
                 if not self._publisher_event.wait(timeout):
+                    return
+
+    def wait_for_processed_signals(self, block_name, count=0, timeout=1):
+        if not count:
+            self._processed_event.wait(timeout)
+        else:
+            while count > len(self._router._processed_signals[block_name]):
+                if not self._processed_event.wait(timeout):
                     return
 
     def command_block(self, block_name, command_name, **kwargs):

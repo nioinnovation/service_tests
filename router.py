@@ -1,7 +1,6 @@
 from collections import defaultdict
 from copy import deepcopy
 from nio.router.base import BlockRouter
-from nio.signal.base import Signal
 from nio.util.threading.spawn import spawn
 
 
