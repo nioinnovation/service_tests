@@ -3,7 +3,7 @@ import re
 import sys
 from threading import Event
 from unittest.mock import MagicMock
-from nio import Block
+from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -253,10 +253,27 @@ class NioServiceTestCase(NIOTestCase):
         self._processed_event.set()
         self._processed_event.clear()
 
+    def _call_processed(self, process_signals):
+        def process_wrapper(*args, **kwargs):
+            process_signals(*args, **kwargs)
+            self._processed_signals()
+        return process_wrapper
+
     def _setup_processed(self):
-        # wrap every blocks (including mocked blocks) process_signals
+        # wrap every block's (including mocked blocks) process_signals
         # function with a custom one that calls _processed_signals upon exit.
-        
+        for block in self._blocks:
+            block.process_signals = self._call_processed(block.process_signals)
+
+    def wait_for_processed_signals(self, block_name, count=0, timeout=1):
+        # Wait the given timeout for the given block's number of processed
+        # signals to be equal to count.
+        if not count:
+            self._processed_event.wait(timeout)
+        else:
+            while count > len(self._router._processed_signals[block_name]):
+                if not self._processed_event.wait(timeout):
+                    return
 
     def wait_for_published_signals(self, count=0, timeout=1):
         """Wait for the specified number of signals to be published
@@ -274,14 +291,6 @@ class NioServiceTestCase(NIOTestCase):
             # Wait for specified number of signals
             while(count > len(self.published_signals)):
                 if not self._publisher_event.wait(timeout):
-                    return
-
-    def wait_for_processed_signals(self, block_name, count=0, timeout=1):
-        if not count:
-            self._processed_event.wait(timeout)
-        else:
-            while count > len(self._router._processed_signals[block_name]):
-                if not self._processed_event.wait(timeout):
                     return
 
     def command_block(self, block_name, command_name, **kwargs):
