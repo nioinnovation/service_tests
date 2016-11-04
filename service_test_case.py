@@ -262,7 +262,7 @@ class NioServiceTestCase(NIOTestCase):
     def _setup_processed(self):
         # wrap every block's (including mocked blocks) process_signals
         # function with a custom one that calls _processed_signals upon exit.
-        for block in self._blocks:
+        for block_name, block in self._blocks.items():
             block.process_signals = self._call_processed(block.process_signals)
 
     def wait_for_processed_signals(self, block_name, count=0, timeout=1):
