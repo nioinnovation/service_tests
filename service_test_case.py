@@ -260,20 +260,28 @@ class NioServiceTestCase(NIOTestCase):
         return process_wrapper
 
     def _setup_processed(self):
-        # wrap every block's (including mocked blocks) process_signals
-        # function with a custom one that calls _processed_signals upon exit.
+        """wrap every block's (including mocked blocks) process_signals
+        function with a custom one that calls _processed_signals upon exit.
+        """
         for block_name, block in self._blocks.items():
             block.process_signals = self._call_processed(block.process_signals)
 
     def wait_for_processed_signals(self, block_name, count=0, timeout=1):
-        # Wait the given timeout for the given block's number of processed
-        # signals to be equal to count.
+        """ Wait the given timeout for the given block's number of processed
+        signals to be equal to count.
+        """
         if not count:
             self._processed_event.wait(timeout)
         else:
             while count > len(self._router._processed_signals[block_name]):
                 if not self._processed_event.wait(timeout):
                     return
+
+    def wait_for_next_processed_signal(self, timeout=1):
+        """ Wait the given timeout for any block in the service to process a
+        signal.
+        """
+        self._processed_event.wait(timeout)
 
     def wait_for_published_signals(self, count=0, timeout=1):
         """Wait for the specified number of signals to be published
