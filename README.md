@@ -4,7 +4,7 @@ This is a testing framework for writting and running unit tests for n.io service
 
 ## Getting started with the framework
 
-Close this repo into your n.io project directory as a submodule and create a **tests** directory for you service unit tests. Example project file structure:
+Clone this repo into your n.io project directory as a submodule and create a **tests** directory for you service unit tests. Example project file structure:
 
 ```
 - nio.env
