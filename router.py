@@ -1,5 +1,7 @@
 from collections import defaultdict
 from copy import deepcopy
+from threading import Event
+
 from nio.router.base import BlockRouter
 from nio.util.threading.spawn import spawn
 
@@ -15,6 +17,7 @@ class ServiceTestRouter(BlockRouter):
     def configure(self, context):
         self._execution = context.execution
         self._blocks = context.blocks
+        self._setup_processed()
 
     def notify_signals(self, block, signals, output_id):
         from_block_name = block.name()
@@ -35,3 +38,27 @@ class ServiceTestRouter(BlockRouter):
             else:
                 spawn(to_block.process_signals, cloned_signals, input_id)
             self._processed_signals[to_block.name()].extend(signals)
+
+    def _processed_signals_set(self, block_name):
+        self._blocks[block_name]._processed_event.set()
+        self._blocks[block_name]._processed_event.clear()
+
+    def _call_processed(self, process_signals, block_name):
+        """function wrapper for calling a block's _processed_signals after
+        its process_signals.
+        """
+        def process_wrapper(*args, **kwargs):
+            process_signals(*args, **kwargs)
+            self._processed_signals_set(block_name)
+        return process_wrapper
+
+    def _setup_processed(self):
+        """wrap every block's (including mocked blocks) process_signals
+        function with a custom one that calls _processed_signals upon exit.
+
+        Also give every block it's own event for processed_signals.
+        """
+        for block_name, block in self._blocks.items():
+            block.process_signals = self._call_processed(block.process_signals,
+                                                         block_name)
+            block._processed_event = Event()
