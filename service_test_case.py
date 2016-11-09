@@ -3,7 +3,7 @@ import re
 import sys
 from threading import Event
 from unittest.mock import MagicMock
-from nio import Block
+from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -74,7 +74,8 @@ class NioServiceTestCase(NIOTestCase):
     def publish_signals(self, topic, signals):
         self._publishers[topic].send(signals)
 
-    def notify_signals(self, block_name, signals, terminal="__default_terminal_value"):
+    def notify_signals(self, block_name, signals,
+                       terminal="__default_terminal_value"):
         self._router.notify_signals(
             self._blocks[block_name], signals, terminal)
 
@@ -245,6 +246,17 @@ class NioServiceTestCase(NIOTestCase):
         for property in new_block_config:
             block_config[property] = new_block_config[property]
         return block_config
+
+    def wait_for_processed_signals(self, block_name, count=0, timeout=1):
+        """ Wait the given timeout for the given block's number of processed
+        signals to be equal to count.
+        """
+        if not count:
+            self._blocks[block_name]._processed_event.wait(timeout)
+        else:
+            while count > len(self._router._processed_signals[block_name]):
+                if not self._blocks[block_name]._processed_event.wait(timeout):
+                    return
 
     def wait_for_published_signals(self, count=0, timeout=1):
         """Wait for the specified number of signals to be published
