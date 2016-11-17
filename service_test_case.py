@@ -305,8 +305,10 @@ class NioServiceTestCase(NIOTestCase):
         try:
             command = getattr(self._blocks[block_name], command_name)
         except Exception as e:
-            raise AssertionError('Could not get block command: '
-                                 '{}'.format(command_name), e)
+            raise AssertionError('Could not get block command: {}. Commands '
+                                 'for this block: {}'.format(command_name,
+                                 list(self._blocks[block_name].get_commands().keys())),
+                                 e)
         else:
             command(**kwargs)
 
@@ -333,3 +335,26 @@ class NioServiceTestCase(NIOTestCase):
                     print("Topic {} received an invalid signal: {}."
                           .format(topic, signal))
                     self._invalid_topics.update({topic: e})
+
+    def assert_num_signals_published(self, expected):
+        """asserts that the amount of published signals is equal to expected"""
+        if not isinstance(expected, int):
+            raise TypeError('Amount of published signals can only be an int. '
+                            'Got type {}: {}'.format(type(expected), expected))
+        actual = len(self.published_signals)
+        if not actual == expected:
+            raise AssertionError('Amount of published signals not equal to {}.'
+                                 ' Actual: {}'.format(expected, actual))
+
+    def assert_num_signals_processed(self, expected, block_name):
+        """asserts on a per-block basis that the number of signals that have
+        been processed is equal to expected.
+        """
+        if not isinstance(expected, int):
+            raise TypeError('Amount of processed signals can only be an int. '
+                            'Got type {}: {}'.format(type(expected), expected))
+        actual = len(self._router._processed_signals[block_name])
+        if not actual == expected:
+            raise AssertionError('Amount of processed signals for block "{}" '
+                                 'not equal to {}. Actual: {}'
+                                 .format(block_name, expected, actual))
