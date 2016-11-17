@@ -2,11 +2,13 @@ import json
 import os
 import re
 import sys
+from copy import copy
 from threading import Event
 from unittest.mock import MagicMock
 
 import jsonschema
 from nio.block.base import Block
+from nio.signal.base import Signal
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -357,4 +359,3 @@ class NioServiceTestCase(NIOTestCase):
         if not actual == expected:
             raise AssertionError('Amount of processed signals for block "{}" '
                                  'not equal to {}. Actual: {}'
-                                 .format(block_name, expected, actual))
