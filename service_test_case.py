@@ -133,7 +133,7 @@ class NioServiceTestCase(NIOTestCase):
     def _setup_blocks(self):
         # Instantiate and configure blocks
         blocks = Discover.discover_classes('blocks', Block, is_class_discoverable)
-        service_block_names = [service_block["name"] for service_block in \
+        service_block_names = [service_block["name"] for service_block in
                                self.service_config.get("execution", [])]
         service_block_mappings = {}
         for mapping in self.service_config.get("mappings", []):
@@ -172,7 +172,7 @@ class NioServiceTestCase(NIOTestCase):
             block.process_signals.side_effect = \
                 self.mock_blocks()[block_config["name"]]
         else:
-            block = [block for block in blocks if \
+            block = [block for block in blocks if
                      block.__name__ == block_config["type"]][0]()
         return block
 
@@ -277,6 +277,7 @@ class NioServiceTestCase(NIOTestCase):
                     return
 
     def command_block(self, block_name, command_name, **kwargs):
+        """call a specified blocks command with given keyword arguments"""
         try:
             command = getattr(self._blocks[block_name], command_name)
         except Exception as e:
