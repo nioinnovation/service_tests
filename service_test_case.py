@@ -72,10 +72,16 @@ class NioServiceTestCase(NIOTestCase):
         return []
 
     def publish_signals(self, topic, signals):
+        """publish signals to a given topic.
+        Does not add to self.published_signals
+        """
         self._publishers[topic].send(signals)
 
     def notify_signals(self, block_name, signals,
                        terminal="__default_terminal_value"):
+        """notify signals from a block. Adds to a blocks processed signals,
+        but does not call block.process_signals.
+        """
         self._router.notify_signals(
             self._blocks[block_name], signals, terminal)
 
@@ -145,6 +151,8 @@ class NioServiceTestCase(NIOTestCase):
             block_config = self.block_configs.get(mapping_name)
             if not block_config:
                 # skip blocks that don't have a config - this is a problem
+                print('Could not get a config for block: {}, skipping.'
+                      .format(service_block_name))
                 continue
             # use mapping name for block
             block_config["name"] = service_block_name
@@ -166,6 +174,7 @@ class NioServiceTestCase(NIOTestCase):
             self._blocks[block].start()
 
     def _init_block(self, block_config, blocks):
+        """create a mocked block for each block given in self.mock_blocks."""
         if block_config["name"] in self.mock_blocks():
             block = MagicMock()
             block.name.return_value = block_config["name"]
@@ -177,7 +186,7 @@ class NioServiceTestCase(NIOTestCase):
         return block
 
     def _replace_env_vars(self, config):
-        """Return config with environment vatriables swapped out"""
+        """Return config with environment variables swapped out"""
         for var in self.env_vars():
             config = \
                 self._replace_env_var(config, var, self.env_vars()[var])
@@ -241,6 +250,7 @@ class NioServiceTestCase(NIOTestCase):
         self._publisher_event.clear()
 
     def _override_block_config(self, block_config):
+        """override a blocks config with the given block config"""
         new_block_config = self.override_block_configs().get(
             block_config["name"], block_config)
         for property in new_block_config:
