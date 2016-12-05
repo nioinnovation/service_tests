@@ -355,7 +355,14 @@ class NioServiceTestCase(NIOTestCase):
         if not isinstance(expected, int):
             raise TypeError('Amount of processed signals can only be an int. '
                             'Got type {}: {}'.format(type(expected), expected))
+
         actual = len(self.processed_signals)
         if not actual == expected:
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
+
+        actual = len(self._router._processed_signals[block_name])
+        if not actual == expected:
+            raise AssertionError('Amount of processed signals for block "{}" '
+                                 'not equal to {}. Actual: {}'
+                                 .format(block_name, expected, actual))
