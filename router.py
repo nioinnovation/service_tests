@@ -21,14 +21,14 @@ class ServiceTestRouter(BlockRouter):
 
     def notify_signals(self, block, signals, output_id):
         from_block_name = block.name()
-        all_receivers = [block["receivers"] for block in self._execution \
-                     if block["name"] == from_block_name][0]
+        all_receivers = [block["receivers"] for block in self._execution
+                         if block["name"] == from_block_name][0]
         # If output_id isn't in receivers, then use default output
         receivers = all_receivers.get(
             output_id, all_receivers.get("__default_terminal_value", []))
         for receiver in receivers:
-            receiver_name  = receiver["name"]
-            input_id  = receiver["input"]
+            receiver_name = receiver["name"]
+            input_id = receiver["input"]
             to_block = self._blocks[receiver_name]
             print("{} -> {}".format(from_block_name, receiver_name))
             cloned_signals = deepcopy(signals)

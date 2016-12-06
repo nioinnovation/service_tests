@@ -72,10 +72,16 @@ class NioServiceTestCase(NIOTestCase):
         return []
 
     def publish_signals(self, topic, signals):
+        """publish signals to a given topic.
+        Does not add to self.published_signals
+        """
         self._publishers[topic].send(signals)
 
     def notify_signals(self, block_name, signals,
                        terminal="__default_terminal_value"):
+        """notify signals from a block. Adds to a blocks processed signals,
+        but does not call block.process_signals.
+        """
         self._router.notify_signals(
             self._blocks[block_name], signals, terminal)
 
@@ -133,7 +139,7 @@ class NioServiceTestCase(NIOTestCase):
     def _setup_blocks(self):
         # Instantiate and configure blocks
         blocks = Discover.discover_classes('blocks', Block, is_class_discoverable)
-        service_block_names = [service_block["name"] for service_block in \
+        service_block_names = [service_block["name"] for service_block in
                                self.service_config.get("execution", [])]
         service_block_mappings = {}
         for mapping in self.service_config.get("mappings", []):
@@ -145,6 +151,8 @@ class NioServiceTestCase(NIOTestCase):
             block_config = self.block_configs.get(mapping_name)
             if not block_config:
                 # skip blocks that don't have a config - this is a problem
+                print('Could not get a config for block: {}, skipping.'
+                      .format(service_block_name))
                 continue
             # use mapping name for block
             block_config["name"] = service_block_name
@@ -166,18 +174,19 @@ class NioServiceTestCase(NIOTestCase):
             self._blocks[block].start()
 
     def _init_block(self, block_config, blocks):
+        """create a mocked block for each block given in self.mock_blocks."""
         if block_config["name"] in self.mock_blocks():
             block = MagicMock()
             block.name.return_value = block_config["name"]
             block.process_signals.side_effect = \
                 self.mock_blocks()[block_config["name"]]
         else:
-            block = [block for block in blocks if \
+            block = [block for block in blocks if
                      block.__name__ == block_config["type"]][0]()
         return block
 
     def _replace_env_vars(self, config):
-        """Return config with environment vatriables swapped out"""
+        """Return config with environment variables swapped out"""
         for var in self.env_vars():
             config = \
                 self._replace_env_var(config, var, self.env_vars()[var])
@@ -241,6 +250,7 @@ class NioServiceTestCase(NIOTestCase):
         self._publisher_event.clear()
 
     def _override_block_config(self, block_config):
+        """override a blocks config with the given block config"""
         new_block_config = self.override_block_configs().get(
             block_config["name"], block_config)
         for property in new_block_config:
@@ -272,11 +282,12 @@ class NioServiceTestCase(NIOTestCase):
             self._publisher_event.wait(timeout)
         else:
             # Wait for specified number of signals
-            while(count > len(self.published_signals)):
+            while count > len(self.published_signals):
                 if not self._publisher_event.wait(timeout):
                     return
 
     def command_block(self, block_name, command_name, **kwargs):
+        """call a specified blocks command with given keyword arguments"""
         try:
             command = getattr(self._blocks[block_name], command_name)
         except Exception as e:
