@@ -1,8 +1,11 @@
+import json
 import os
 import re
 import sys
 from threading import Event
 from unittest.mock import MagicMock
+
+import jsonschema
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
@@ -58,6 +61,8 @@ class NioServiceTestCase(NIOTestCase):
         self._publisher_event = Event()
         # Allow tests to publish signals to any subscriber
         self._publishers = {}
+        # Json schema for publisher and subscriber validation
+        self._schema = {}
 
     @property
     def processed_signals(self):
@@ -109,6 +114,7 @@ class NioServiceTestCase(NIOTestCase):
         self.service_config = self.service_configs.get(self.service_name, {})
         self._setup_blocks()
         self._setup_pubsub()
+        self._setup_json_schema()
         # Start blocks
         if self.auto_start:
             self.start()
@@ -243,8 +249,9 @@ class NioServiceTestCase(NIOTestCase):
             self._publishers[publisher].close()
         self._publisher_event = Event()
 
-    def _published_signals(self, signals):
+    def _published_signals(self, signals, topic=None):
         # Save published signals for assertions
+        self.schema_validate(signals, topic)
         self.published_signals.extend(signals)
         self._publisher_event.set()
         self._publisher_event.clear()
@@ -295,3 +302,24 @@ class NioServiceTestCase(NIOTestCase):
                                  '{}'.format(command_name), e)
         else:
             command(**kwargs)
+
+    def _setup_json_schema(self):
+        """Load the json schema file that specifies which publisher/subscriber
+        topics receive which kind of data.
+        """
+        try:
+            with open("pubsub_specify.json") as json_file:
+                self._schema = json.load(json_file)
+        except Exception as e:
+            print('Could not load json schema file. {}'.format(e))
+
+    def schema_validate(self, signals, topic=None):
+        if topic in self._schema:
+            print('validating signals for topic {}...'.format(topic))
+            for signal in signals:
+                try:
+                    jsonschema.validate(signal.to_dict(), self._schema[topic])
+                except Exception as e:
+                    print("Topic {} received an invalid signal: {}. {}"
+                          .format(topic, signal, e))
+                    raise AssertionError(e)
