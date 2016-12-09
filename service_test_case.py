@@ -230,6 +230,7 @@ class NioServiceTestCase(NIOTestCase):
 
         super().tearDown()
 
+        # fail if there were topics found invalid
         if self._invalid_topics:
             raise AssertionError(self._invalid_topics)
 
@@ -320,8 +321,9 @@ class NioServiceTestCase(NIOTestCase):
             print('Could not load json schema file. {}'.format(e))
 
     def schema_validate(self, signals, topic=None):
+        """validate each signal in a list against the given json schema.
+        Update any error information to be collected at the end of the test."""
         if topic in self._schema:
-            print('validating signals for topic {}...'.format(topic))
             for signal in signals:
                 try:
                     jsonschema.validate(signal.to_dict(), self._schema[topic])
