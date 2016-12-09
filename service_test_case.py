@@ -80,6 +80,7 @@ class NioServiceTestCase(NIOTestCase):
         """publish signals to a given topic.
         Does not add to self.published_signals
         """
+        self.schema_validate(signals, topic)
         self._publishers[topic].send(signals)
 
     def notify_signals(self, block_name, signals,
@@ -108,6 +109,7 @@ class NioServiceTestCase(NIOTestCase):
 
     def setUp(self):
         super().setUp()
+        self._invalid_topics = {}
         persistence = Persistence()
         self.block_configs = persistence.load_collection("blocks")
         self.service_configs = persistence.load_collection("services")
@@ -220,12 +222,16 @@ class NioServiceTestCase(NIOTestCase):
         return config
 
     def tearDown(self):
-        super().tearDown()
         # Tear down publishers and subscribers for tests
         self._teardown_pubsub()
         # Stop blocks
         for block in self._blocks:
             self._blocks[block].stop()
+
+        super().tearDown()
+
+        if self._invalid_topics:
+            raise AssertionError(self._invalid_topics)
 
     def _setup_pubsub(self):
         # Supscribe to published signals
@@ -308,7 +314,7 @@ class NioServiceTestCase(NIOTestCase):
         topics receive which kind of data.
         """
         try:
-            with open("pubsub_specify.json") as json_file:
+            with open("pubsub_specify.json", 'r') as json_file:
                 self._schema = json.load(json_file)
         except Exception as e:
             print('Could not load json schema file. {}'.format(e))
@@ -320,6 +326,6 @@ class NioServiceTestCase(NIOTestCase):
                 try:
                     jsonschema.validate(signal.to_dict(), self._schema[topic])
                 except Exception as e:
-                    print("Topic {} received an invalid signal: {}. {}"
-                          .format(topic, signal, e))
-                    raise AssertionError(e)
+                    print("Topic {} received an invalid signal: {}."
+                          .format(topic, signal))
+                    self._invalid_topics.update({topic: e})
