@@ -315,7 +315,7 @@ class NioServiceTestCase(NIOTestCase):
         topics receive which kind of data.
         """
         try:
-            with open("pubsub_specify.json", 'r') as json_file:
+            with open("tests/pubsub_specify.json", 'r') as json_file:
                 self._schema = json.load(json_file)
         except Exception as e:
             print('Could not load json schema file. {}'.format(e))
