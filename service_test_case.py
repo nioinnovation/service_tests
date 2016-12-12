@@ -315,10 +315,12 @@ class NioServiceTestCase(NIOTestCase):
         topics receive which kind of data.
         """
         try:
-            with open("tests/pubsub_specify.json", 'r') as json_file:
+            with open("tests/topic_schema.json", 'r') as json_file:
                 self._schema = json.load(json_file)
         except Exception as e:
-            print('Could not load json schema file. {}'.format(e))
+            print('Could not load json schema file: {}. If you wish to do '
+                  'publisher/subscriber topic validation put a json schema '
+                  'file in project/tests.'.format(e))
 
     def schema_validate(self, signals, topic=None):
         """validate each signal in a list against the given json schema.
