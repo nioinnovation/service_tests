@@ -78,3 +78,41 @@ Most blocks also support the ability to fake time so you can jump ahead in time 
 from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
 JumpAheadScheduler.jump_ahead(10)
 ```
+
+Another option is to wait for a block to process signals:
+
+```
+wait_for_processed_signals(block, number, timeout)
+```
+
+
+## Subscriber / Publisher topic validation with JSON Schema
+
+You can also validate signals associated with publishers and subscribers by putting
+a json schema formatted json file in project/tests: 
+
+-  http://json-schema.org/
+-  https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf
+
+Signals going into the specified topics will be validated according to the file specification.
+ 
+For instance, this json schema will make sure that all signals going into the topic "test_topic"
+are dictionary objects with at least 1 property. All signals going into this topic are
+required to have a "test_attribute" attribute, which can be a string or integer.
+Any additional properties on the signal must be of type integer.
+
+
+```
+{
+  "test_topic": {
+    "type": "object",
+    "minProperties": 1,
+    "properties": {
+      "test_attribute": {"type": ["string", "integer"],
+                         "minlength": 1}
+    },
+    "required": ["test_attribute"],
+    "additionalProperties": {"type": "integer"}
+  }
+}
+```

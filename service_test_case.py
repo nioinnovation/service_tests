@@ -1,8 +1,11 @@
+import json
 import os
 import re
 import sys
 from threading import Event
 from unittest.mock import MagicMock
+
+import jsonschema
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
@@ -58,6 +61,8 @@ class NioServiceTestCase(NIOTestCase):
         self._publisher_event = Event()
         # Allow tests to publish signals to any subscriber
         self._publishers = {}
+        # Json schema for publisher and subscriber validation
+        self._schema = {}
 
     @property
     def processed_signals(self):
@@ -75,6 +80,7 @@ class NioServiceTestCase(NIOTestCase):
         """publish signals to a given topic.
         Does not add to self.published_signals
         """
+        self.schema_validate(signals, topic)
         self._publishers[topic].send(signals)
 
     def notify_signals(self, block_name, signals,
@@ -103,12 +109,14 @@ class NioServiceTestCase(NIOTestCase):
 
     def setUp(self):
         super().setUp()
+        self._invalid_topics = {}
         persistence = Persistence()
         self.block_configs = persistence.load_collection("blocks")
         self.service_configs = persistence.load_collection("services")
         self.service_config = self.service_configs.get(self.service_name, {})
         self._setup_blocks()
         self._setup_pubsub()
+        self._setup_json_schema()
         # Start blocks
         if self.auto_start:
             self.start()
@@ -214,12 +222,17 @@ class NioServiceTestCase(NIOTestCase):
         return config
 
     def tearDown(self):
-        super().tearDown()
         # Tear down publishers and subscribers for tests
         self._teardown_pubsub()
         # Stop blocks
         for block in self._blocks:
             self._blocks[block].stop()
+
+        super().tearDown()
+
+        # fail if there were topics found invalid
+        if self._invalid_topics:
+            raise AssertionError(self._invalid_topics)
 
     def _setup_pubsub(self):
         # Supscribe to published signals
@@ -243,8 +256,9 @@ class NioServiceTestCase(NIOTestCase):
             self._publishers[publisher].close()
         self._publisher_event = Event()
 
-    def _published_signals(self, signals):
+    def _published_signals(self, signals, topic=None):
         # Save published signals for assertions
+        self.schema_validate(signals, topic)
         self.published_signals.extend(signals)
         self._publisher_event.set()
         self._publisher_event.clear()
@@ -295,3 +309,27 @@ class NioServiceTestCase(NIOTestCase):
                                  '{}'.format(command_name), e)
         else:
             command(**kwargs)
+
+    def _setup_json_schema(self):
+        """Load the json schema file that specifies which publisher/subscriber
+        topics receive which kind of data.
+        """
+        try:
+            with open("tests/topic_schema.json", 'r') as json_file:
+                self._schema = json.load(json_file)
+        except Exception as e:
+            print('Could not load json schema file: {}. If you wish to do '
+                  'publisher/subscriber topic validation put a json schema '
+                  'file in project/tests.'.format(e))
+
+    def schema_validate(self, signals, topic=None):
+        """validate each signal in a list against the given json schema.
+        Update any error information to be collected at the end of the test."""
+        if topic in self._schema:
+            for signal in signals:
+                try:
+                    jsonschema.validate(signal.to_dict(), self._schema[topic])
+                except Exception as e:
+                    print("Topic {} received an invalid signal: {}."
+                          .format(topic, signal))
+                    self._invalid_topics.update({topic: e})
