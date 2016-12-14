@@ -2,11 +2,13 @@ import json
 import os
 import re
 import sys
+from copy import copy
 from threading import Event
 from unittest.mock import MagicMock
 
 import jsonschema
 from nio.block.base import Block
+from nio.signal.base import Signal
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -305,8 +307,10 @@ class NioServiceTestCase(NIOTestCase):
         try:
             command = getattr(self._blocks[block_name], command_name)
         except Exception as e:
-            raise AssertionError('Could not get block command: '
-                                 '{}'.format(command_name), e)
+            raise AssertionError('Could not get block command: {}. Commands '
+                                 'for this block: {}'.format(command_name,
+                                 list(self._blocks[block_name].get_commands().keys())),
+                                 e)
         else:
             command(**kwargs)
 
@@ -333,3 +337,26 @@ class NioServiceTestCase(NIOTestCase):
                     print("Topic {} received an invalid signal: {}."
                           .format(topic, signal))
                     self._invalid_topics.update({topic: e})
+
+    def assert_num_signals_published(self, expected):
+        """asserts that the amount of published signals is equal to expected"""
+        if not isinstance(expected, int):
+            raise TypeError('Amount of published signals can only be an int. '
+                            'Got type {}: {}'.format(type(expected), expected))
+        actual = len(self.published_signals)
+        if not actual == expected:
+            raise AssertionError('Amount of published signals not equal to {}.'
+                                 ' Actual: {}'.format(expected, actual))
+
+    def assert_num_signals_processed(self, expected, block_name):
+        """asserts on a per-block basis that the number of signals that have
+        been processed is equal to expected.
+        """
+        if not isinstance(expected, int):
+            raise TypeError('Amount of processed signals can only be an int. '
+                            'Got type {}: {}'.format(type(expected), expected))
+
+        actual = len(self.processed_signals[block_name])
+        if not actual == expected:
+            raise AssertionError('Amount of processed signals not equal to {}.'
+                                 ' Actual: {}'.format(expected, actual))
