@@ -349,8 +349,8 @@ class NioServiceTestCase(NIOTestCase):
                                  ' Actual: {}'.format(expected, actual))
 
     def assert_num_signals_processed(self, expected, block_name):
-        """asserts service-wide that the number of signals that have been
-        processed is equal to expected.
+        """asserts on a per-block basis that the number of signals that have
+        been processed is equal to expected.
         """
         if not isinstance(expected, int):
             raise TypeError('Amount of processed signals can only be an int. '
@@ -360,9 +360,3 @@ class NioServiceTestCase(NIOTestCase):
         if not actual == expected:
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
-
-        actual = len(self._router._processed_signals[block_name])
-        if not actual == expected:
-            raise AssertionError('Amount of processed signals for block "{}" '
-                                 'not equal to {}. Actual: {}'
-                                 .format(block_name, expected, actual))
