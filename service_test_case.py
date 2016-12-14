@@ -356,7 +356,7 @@ class NioServiceTestCase(NIOTestCase):
             raise TypeError('Amount of processed signals can only be an int. '
                             'Got type {}: {}'.format(type(expected), expected))
 
-        actual = len(self.processed_signals)
+        actual = len(self.processed_signals[block_name])
         if not actual == expected:
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
