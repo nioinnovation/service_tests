@@ -37,7 +37,6 @@ class ServiceTestRouter(BlockRouter):
                 spawn(to_block.process_signals, cloned_signals)
             else:
                 spawn(to_block.process_signals, cloned_signals, input_id)
-            self._processed_signals[to_block.name()].extend(signals)
 
     def _processed_signals_set(self, block_name):
         self._blocks[block_name]._processed_event.set()
@@ -49,6 +48,7 @@ class ServiceTestRouter(BlockRouter):
         """
         def process_wrapper(*args, **kwargs):
             process_signals(*args, **kwargs)
+            self._processed_signals[block_name].extend(*args)
             self._processed_signals_set(block_name)
         return process_wrapper
 
