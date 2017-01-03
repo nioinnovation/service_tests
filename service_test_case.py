@@ -326,6 +326,11 @@ class NioServiceTestCase(NIOTestCase):
                   'publisher/subscriber topic validation put a json schema '
                   'file in project/tests.'.format(e))
 
+        # replace env vars for schema topics
+        if self._schema:
+            self._schema = {self._replace_env_vars({'topic': topic})['topic']:
+                            self._schema[topic] for topic in self._schema}
+
     def schema_validate(self, signals, topic=None):
         """validate each signal in a list against the given json schema.
         Update any error information to be collected at the end of the test."""
