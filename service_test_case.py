@@ -365,3 +365,14 @@ class NioServiceTestCase(NIOTestCase):
         if not actual == expected:
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
+
+    def assert_signal_published(self, signal_dict):
+        """asserts signal_dict is in the list of published signals"""
+        for published_signal in self.published_signals:
+            try:
+                self.assertDictEqual(published_signal.to_dict(), signal_dict)
+                return
+            except:
+                # Check next signal
+                continue
+        self.fail("Signal has not been published: {}".format(signal_dict))
