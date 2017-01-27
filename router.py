@@ -1,5 +1,5 @@
 from collections import defaultdict
-from copy import deepcopy
+from copy import copy, deepcopy
 from threading import Event
 
 from nio.router.base import BlockRouter
@@ -31,7 +31,10 @@ class ServiceTestRouter(BlockRouter):
             input_id = receiver["input"]
             to_block = self._blocks[receiver_name]
             print("{} -> {}".format(from_block_name, receiver_name))
-            cloned_signals = deepcopy(signals)
+            try:
+                cloned_signals = deepcopy(signals)
+            except:
+                cloned_signals = copy(signals)
             if input_id == "__default_terminal_value":
                 # don't include input_id if it's default terminal
                 spawn(to_block.process_signals, cloned_signals)
