@@ -54,7 +54,7 @@ class ServiceTestRouter(BlockRouter):
                 process_signals(*args, **kwargs)
             except Exception as e:
                 print("Exception in block {}: {}".format(block_name, e))
-            self._processed_signals[block_name].extend(*args)
+            self._processed_signals[block_name].extend(args[0])
             self._processed_signals_set(block_name)
         return process_wrapper
 
