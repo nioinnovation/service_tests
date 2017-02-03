@@ -20,9 +20,14 @@ class ServiceTestRouter(BlockRouter):
         self._setup_processed()
 
     def notify_signals(self, block, signals, output_id):
+        if not signals:
+            print("Block {} notified an empty signal list".format(block))
+            return
         from_block_name = block.name()
         all_receivers = [block["receivers"] for block in self._execution
                          if block["name"] == from_block_name][0]
+        if not all_receivers:
+            return
         # If output_id isn't in receivers, then use default output
         receivers = all_receivers.get(
             output_id, all_receivers.get("__default_terminal_value", []))
