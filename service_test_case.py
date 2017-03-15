@@ -50,7 +50,6 @@ class NioServiceTestCase(NIOTestCase):
 
     service_name = None
     auto_start = True
-    validate_topics = True
 
     def __init__(self, methodName='runTests'):
         super().__init__(methodName)
@@ -319,17 +318,18 @@ class NioServiceTestCase(NIOTestCase):
         """Load the json schema file that specifies which publisher/subscriber
         topics receive which kind of data.
         """
-        try:
-            with open("tests/topic_schema.json", 'r') as json_file:
-                self._schema = json.load(json_file)
-        except Exception as e:
-            msg = 'Could not load json schema file: {}. If you wish to do ' \
-                  'publisher/subscriber topic validation, put a ' \
-                  'topic_schema.json file in project/tests.'.format(e)
-            if self.validate_topics:
-                self.fail(msg)
-            else:
-                print(msg)
+        json_file_path = "tests/topic_schema.json"
+        if os.path.isfile(json_file_path):
+            with open(json_file_path, 'r') as json_file:
+                try:
+                    self._schema = json.load(json_file)
+                except Exception as e:
+                    self.fail("Problem parsing topic validation file at {}: {}"
+                              .format(json_file_path, e))
+        else:
+            print('Could not find a topic schema file. If you wish to do '
+                  'publisher/subscriber topic validation, put a '
+                  'topic_schema.json file in project/tests.')
 
         # replace env vars for schema topics
         if self._schema:
