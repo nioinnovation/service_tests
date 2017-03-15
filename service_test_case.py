@@ -344,16 +344,24 @@ class NioServiceTestCase(NIOTestCase):
                 try:
                     jsonschema.validate(signal.to_dict(), self._schema[topic])
                 except Exception as e:
-                    print("Topic {} received an invalid signal: {}."
+                    print("Topic {} received an invalid signal: {}"
                           .format(topic, signal))
 
-                    fail_msg = "Error with signal attribute {} when " \
-                               "validating schema property '{}': {}" \
-                        .format({e.path[0]: signal.to_dict()[e.path[0]]},
-                                "->".join([topic] + list(e.schema_path)),
-                                e.message)
-
-                    self._invalid_topics.update({topic: fail_msg})
+                    if e.path:
+                        fail_msg = "Error with signal attribute {} when " \
+                                   "validating schema property '{}': {}" \
+                                   .format(
+                                      {e.path[0]: signal.to_dict()[e.path[0]]},
+                                      "->".join([topic] + list(e.schema_path)),
+                                      e.message
+                        )
+                        self._invalid_topics.update(
+                            {topic: fail_msg}
+                        )
+                    else:
+                        self._invalid_topics.update(
+                            {topic: str(e).replace("\n", " ")}
+                        )
 
     def assert_num_signals_published(self, expected):
         """asserts that the amount of published signals is equal to expected"""
