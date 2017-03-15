@@ -327,10 +327,9 @@ class NioServiceTestCase(NIOTestCase):
                     self.fail("Problem parsing topic validation file at {}: {}"
                               .format(json_file_path, e))
         else:
-            print('Could not find a topic schema file at {}. If you wish to '
+            print('Could not find a topic schema file. If you wish to '
                   'do publisher/subscriber topic validation, put a '
-                  'topic_schema.json file in project/tests.'
-                  .format(json_file_path))
+                  'schema file at {}'.format(json_file_path))
 
         # replace env vars for schema topics
         if self._schema:
