@@ -2,13 +2,11 @@ import json
 import os
 import re
 import sys
-from copy import copy
 from threading import Event
 from unittest.mock import MagicMock
 
 import jsonschema
 from nio.block.base import Block
-from nio.signal.base import Signal
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -16,6 +14,7 @@ from nio.modules.context import ModuleContext
 from nio.testing.test_case import NIOTestCase
 from nio.router.context import RouterContext
 from nio.util.discovery import is_class_discoverable as _is_class_discoverable
+from nio.util.runner import RunnerStatus
 from niocore.core.loader.discover import Discover
 from .router import ServiceTestRouter
 from .module_persistence_file.module import FilePersistenceModule
@@ -180,8 +179,13 @@ class NioServiceTestCase(NIOTestCase):
 
     def start(self):
         # Start blocks
-        for block in self._blocks:
-            self._blocks[block].start()
+        if self._router.status != RunnerStatus.started:
+            self._router.status = RunnerStatus.starting
+            for block in self._blocks:
+                self._blocks[block].start()
+            self._router.status = RunnerStatus.started
+        else:
+            print('Already started this service, cannot start again.')
 
     def _init_block(self, block_config, blocks):
         """create a mocked block for each block given in self.mock_blocks."""
@@ -229,6 +233,9 @@ class NioServiceTestCase(NIOTestCase):
         # Stop blocks
         for block in self._blocks:
             self._blocks[block].stop()
+
+        # set runner status
+        self._router.status = RunnerStatus.stopped
 
         super().tearDown()
 
