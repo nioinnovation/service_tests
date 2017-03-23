@@ -232,8 +232,9 @@ class NioServiceTestCase(NIOTestCase):
 
         super().tearDown()
 
-        # fail if there were topics found invalid
-        if self._invalid_topics:
+        # fail if there were topics found invalid and the test is not already
+        # failing
+        if self._invalid_topics and not self._outcome.errors:
             raise AssertionError(self._invalid_topics)
 
     def _setup_pubsub(self):
