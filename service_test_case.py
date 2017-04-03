@@ -345,9 +345,12 @@ class NioServiceTestCase(NIOTestCase):
                 try:
                     jsonschema.validate(signal.to_dict(), self._schema[topic])
                 except Exception as e:
-                    print("Topic {} received an invalid signal: {}."
+                    print("Topic {} received an invalid signal: {}"
                           .format(topic, signal))
-                    self._invalid_topics.update({topic: e})
+
+                    self._invalid_topics.update(
+                        {topic: " ".join(str(e).replace("\n", " ").split())}
+                    )
 
     def assert_num_signals_published(self, expected):
         """asserts that the amount of published signals is equal to expected"""
