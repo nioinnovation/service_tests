@@ -327,17 +327,25 @@ class NioServiceTestCase(NIOTestCase):
         topics receive which kind of data.
         """
         json_file_path = "tests/topic_schema.json"
-        if os.path.isfile(json_file_path):
-            with open(json_file_path, 'r') as json_file:
-                try:
-                    self._schema = json.load(json_file)
-                except Exception as e:
-                    self.fail("Problem parsing topic validation file at {}: {}"
-                              .format(json_file_path, e))
+        rel_json_file_path = os.path.dirname(
+            os.path.dirname(os.path.relpath(__file__))) + '/' + json_file_path
+
+        if os.path.isfile(rel_json_file_path):
+            json_file_path = rel_json_file_path
+        elif os.path.isfile(json_file_path):
+            pass
         else:
             print('Could not find a topic schema file. If you wish to '
                   'do publisher/subscriber topic validation, put a '
                   'schema file at {}'.format(json_file_path))
+            return
+
+        with open(json_file_path, 'r') as json_file:
+            try:
+                self._schema = json.load(json_file)
+            except Exception as e:
+                self.fail("Problem parsing topic validation file at {}: {}"
+                          .format(json_file_path, e))
 
         # replace env vars for schema topics
         if self._schema:
