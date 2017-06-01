@@ -89,7 +89,7 @@ wait_for_processed_signals(block, number, timeout)
 ## Subscriber / Publisher topic validation with JSON Schema
 
 You can also validate signals associated with publishers and subscribers by putting
-a json schema formatted json file in project/tests: 
+a json schema formatted json file in one of three locations: project_name/tests, project_name/, or one directory above project_name/.
 
 -  http://json-schema.org/
 -  https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf
