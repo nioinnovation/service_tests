@@ -324,28 +324,40 @@ class NioServiceTestCase(NIOTestCase):
 
     def _setup_json_schema(self):
         """Load the json schema file that specifies which publisher/subscriber
-        topics receive which kind of data.
+        topics receive which kind of data. First look in tests/ in project 
+        root, then look in the same directory as service_tests/, which should 
+        be project root. then one more directory up to system root, stopping at 
+        the first topic_schema.json found. 
         """
-        json_file_path = "tests/topic_schema.json"
-        rel_json_file_path = os.path.dirname(
-            os.path.dirname(os.path.relpath(__file__))) + '/' + json_file_path
+        # assuming the service_tests/ dir is always in project root, just go up
+        # two dirs from this file to get there.
+        project_root = os.path.abspath(os.path.join(__file__, "../../"))
 
-        if os.path.isfile(rel_json_file_path):
-            json_file_path = rel_json_file_path
-        elif os.path.isfile(json_file_path):
-            pass
-        else:
-            print('Could not find a topic schema file. If you wish to '
-                  'do publisher/subscriber topic validation, put a '
-                  'schema file at {}'.format(json_file_path))
-            return
+        current_dir = os.path.join(project_root, "tests")
+        while not os.path.isfile(
+                os.path.join(current_dir, "topic_schema.json")):
 
+            # if the current dir is equal to one above the project root, we've
+            # hit the system root, where we stop looking.
+            if os.path.samefile(current_dir, os.path.join(project_root, "..")):
+                print('Could not find a topic schema file. If you wish to '
+                      'do publisher/subscriber topic validation, put a '
+                      '"topic_schema.json" file in {0}/tests, {0}, or {1}.'
+                      .format(project_root,
+                              os.path.abspath(os.path.join(project_root, ".."))))
+                return
+            else:
+                # go up one dir
+                current_dir = os.path.join(current_dir, "..")
+                print('going up one dir to {}'.format(current_dir))
+
+        json_file_path = os.path.join(current_dir, "topic_schema.json")
         with open(json_file_path, 'r') as json_file:
             try:
                 self._schema = json.load(json_file)
             except Exception as e:
-                self.fail("Problem parsing topic validation file at {}: {}"
-                          .format(json_file_path, e))
+                self.fail("Problem parsing topic validation file located at "
+                          "{}: {}".format(json_file_path, e))
 
         # replace env vars for schema topics
         if self._schema:
