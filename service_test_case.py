@@ -349,7 +349,6 @@ class NioServiceTestCase(NIOTestCase):
             else:
                 # go up one dir
                 current_dir = os.path.join(current_dir, "..")
-                print('going up one dir to {}'.format(current_dir))
 
         json_file_path = os.path.join(current_dir, "topic_schema.json")
         with open(json_file_path, 'r') as json_file:
