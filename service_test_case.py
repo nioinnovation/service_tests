@@ -346,16 +346,16 @@ class NioServiceTestCase(NIOTestCase):
                             "Problem parsing topic validation file located at "
                             "{}: {}".format(file_path, e))
                     break
-
-        # replace env vars for schema topics
-        if self._schema:
-            self._schema = {self._replace_env_vars({'topic': topic})['topic']:
-                            self._schema[topic] for topic in self._schema}
         else:
             print('Could not find a topic schema file. If you wish to '
                   'do publisher/subscriber topic validation, put a '
                   '"topic_schema.json" file at {}, {}, or {}.'
                   .format(file_paths[0], file_paths[1], file_paths[2]))
+
+        # replace env vars for schema topics
+        if self._schema:
+            self._schema = {self._replace_env_vars({'topic': topic})['topic']:
+                            self._schema[topic] for topic in self._schema}
 
     def schema_validate(self, signals, topic=None):
         """validate each signal in a list against the given json schema.
