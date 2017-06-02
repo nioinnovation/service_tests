@@ -331,26 +331,24 @@ class NioServiceTestCase(NIOTestCase):
         """
         # assuming the service_tests/ dir is always in project root, just go up
         # two dirs from this file to get there.
+        file_name = "topic_schema.json"
         project_root = os.path.abspath(os.path.join(__file__, "../../"))
+        system_root = os.path.join(project_root, "..")
+        tests_root = os.path.join(project_root, "tests")
 
-        current_dir = os.path.join(project_root, "tests")
-        while not os.path.isfile(
-                os.path.join(current_dir, "topic_schema.json")):
+        if os.path.isfile(os.path.join(tests_root, file_name)):
+            json_file_path = os.path.join(tests_root, file_name)
+        elif os.path.isfile(os.path.join(project_root, file_name)):
+            json_file_path = os.path.join(project_root, file_name)
+        elif os.path.isfile(os.path.join(system_root, file_name)):
+            json_file_path = os.path.join(system_root, file_name)
+        else:
+            print('Could not find a topic schema file. If you wish to '
+                  'do publisher/subscriber topic validation, put a '
+                  '"topic_schema.json" file at {}, {}, or {}.'
+                  .format(tests_root, project_root, system_root))
+            return
 
-            # if the current dir is equal to one above the project root, we've
-            # hit the system root, where we stop looking.
-            if os.path.samefile(current_dir, os.path.join(project_root, "..")):
-                print('Could not find a topic schema file. If you wish to '
-                      'do publisher/subscriber topic validation, put a '
-                      '"topic_schema.json" file in {0}/tests, {0}, or {1}.'
-                      .format(project_root,
-                              os.path.abspath(os.path.join(project_root, ".."))))
-                return
-            else:
-                # go up one dir
-                current_dir = os.path.join(current_dir, "..")
-
-        json_file_path = os.path.join(current_dir, "topic_schema.json")
         with open(json_file_path, 'r') as json_file:
             try:
                 self._schema = json.load(json_file)
