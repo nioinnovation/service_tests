@@ -324,28 +324,33 @@ class NioServiceTestCase(NIOTestCase):
 
     def _setup_json_schema(self):
         """Load the json schema file that specifies which publisher/subscriber
-        topics receive which kind of data.
+        topics receive which kind of data. First look in tests/ in project 
+        root, then look in the same directory as service_tests/, which should 
+        be project root. then one more directory up to system root, stopping at 
+        the first topic_schema.json found. 
         """
-        json_file_path = "tests/topic_schema.json"
-        rel_json_file_path = os.path.dirname(
-            os.path.dirname(os.path.relpath(__file__))) + '/' + json_file_path
-
-        if os.path.isfile(rel_json_file_path):
-            json_file_path = rel_json_file_path
-        elif os.path.isfile(json_file_path):
-            pass
+        file_name = "topic_schema.json"
+        file_paths = [os.path.abspath(
+                         os.path.join(__file__, "../../", file_name)),
+                      os.path.abspath(
+                         os.path.join(__file__, "../../", "tests", file_name)),
+                      os.path.abspath(
+                         os.path.join(__file__, "../../../", file_name))]
+        for file_path in file_paths:
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as json_file:
+                    try:
+                        self._schema = json.load(json_file)
+                    except Exception as e:
+                        self.fail(
+                            "Problem parsing topic validation file located at "
+                            "{}: {}".format(file_path, e))
+                    break
         else:
             print('Could not find a topic schema file. If you wish to '
                   'do publisher/subscriber topic validation, put a '
-                  'schema file at {}'.format(json_file_path))
-            return
-
-        with open(json_file_path, 'r') as json_file:
-            try:
-                self._schema = json.load(json_file)
-            except Exception as e:
-                self.fail("Problem parsing topic validation file at {}: {}"
-                          .format(json_file_path, e))
+                  '"topic_schema.json" file at {}, {}, or {}.'
+                  .format(file_paths[0], file_paths[1], file_paths[2]))
 
         # replace env vars for schema topics
         if self._schema:
