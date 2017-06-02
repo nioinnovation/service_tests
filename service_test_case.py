@@ -329,37 +329,33 @@ class NioServiceTestCase(NIOTestCase):
         be project root. then one more directory up to system root, stopping at 
         the first topic_schema.json found. 
         """
-        # assuming the service_tests/ dir is always in project root, just go up
-        # two dirs from this file to get there.
         file_name = "topic_schema.json"
-        project_root = os.path.abspath(os.path.join(__file__, "../../"))
-        system_root = os.path.join(project_root, "..")
-        tests_root = os.path.join(project_root, "tests")
-
-        if os.path.isfile(os.path.join(tests_root, file_name)):
-            json_file_path = os.path.join(tests_root, file_name)
-        elif os.path.isfile(os.path.join(project_root, file_name)):
-            json_file_path = os.path.join(project_root, file_name)
-        elif os.path.isfile(os.path.join(system_root, file_name)):
-            json_file_path = os.path.join(system_root, file_name)
-        else:
-            print('Could not find a topic schema file. If you wish to '
-                  'do publisher/subscriber topic validation, put a '
-                  '"topic_schema.json" file at {}, {}, or {}.'
-                  .format(tests_root, project_root, system_root))
-            return
-
-        with open(json_file_path, 'r') as json_file:
-            try:
-                self._schema = json.load(json_file)
-            except Exception as e:
-                self.fail("Problem parsing topic validation file located at "
-                          "{}: {}".format(json_file_path, e))
+        file_paths = [os.path.abspath(
+                         os.path.join(__file__, "../../", file_name)),
+                      os.path.abspath(
+                         os.path.join(__file__, "../../", "tests", file_name)),
+                      os.path.abspath(
+                         os.path.join(__file__, "../../../", file_name))]
+        for file_path in file_paths:
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as json_file:
+                    try:
+                        self._schema = json.load(json_file)
+                    except Exception as e:
+                        self.fail(
+                            "Problem parsing topic validation file located at "
+                            "{}: {}".format(file_path, e))
+                    break
 
         # replace env vars for schema topics
         if self._schema:
             self._schema = {self._replace_env_vars({'topic': topic})['topic']:
                             self._schema[topic] for topic in self._schema}
+        else:
+            print('Could not find a topic schema file. If you wish to '
+                  'do publisher/subscriber topic validation, put a '
+                  '"topic_schema.json" file at {}, {}, or {}.'
+                  .format(file_paths[0], file_paths[1], file_paths[2]))
 
     def schema_validate(self, signals, topic=None):
         """validate each signal in a list against the given json schema.
