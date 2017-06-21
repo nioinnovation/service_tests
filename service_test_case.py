@@ -281,14 +281,20 @@ class NioServiceTestCase(NIOTestCase):
             block_config[property] = new_block_config[property]
         return block_config
 
-    def wait_for_processed_signals(self, block_name, count=0, timeout=1):
+    def wait_for_processed_signals(
+            self, block_name, count=0, timeout=1, input_id=None):
         """ Wait the given timeout for the given block's number of processed
         signals to be equal to count.
         """
         if not count:
             self._blocks[block_name]._processed_event.wait(timeout)
         else:
-            while count > len(self._router._processed_signals[block_name]):
+            if input_id is not None:
+                signal_list = \
+                    self._router.processed_signals_input[block_name][input_id]
+            else:
+                signal_list = self._router._processed_signals[block_name]
+            while count > len(signal_list):
                 if not self._blocks[block_name]._processed_event.wait(timeout):
                     return
 
@@ -324,10 +330,10 @@ class NioServiceTestCase(NIOTestCase):
 
     def _setup_json_schema(self):
         """Load the json schema file that specifies which publisher/subscriber
-        topics receive which kind of data. First look in tests/ in project 
-        root, then look in the same directory as service_tests/, which should 
-        be project root. then one more directory up to system root, stopping at 
-        the first topic_schema.json found. 
+        topics receive which kind of data. First look in tests/ in project
+        root, then look in the same directory as service_tests/, which should
+        be project root. then one more directory up to system root, stopping at
+        the first topic_schema.json found.
         """
         file_name = "topic_schema.json"
         file_paths = [os.path.abspath(
@@ -382,7 +388,8 @@ class NioServiceTestCase(NIOTestCase):
             raise AssertionError('Amount of published signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
 
-    def assert_num_signals_processed(self, expected, block_name):
+    def assert_num_signals_processed(
+            self, expected, block_name, input_id=None):
         """asserts on a per-block basis that the number of signals that have
         been processed is equal to expected.
         """
@@ -390,7 +397,11 @@ class NioServiceTestCase(NIOTestCase):
             raise TypeError('Amount of processed signals can only be an int. '
                             'Got type {}: {}'.format(type(expected), expected))
 
-        actual = len(self.processed_signals[block_name])
+        if input_id is not None:
+            actual = \
+                len(self._router.processed_signals_input[block_name][input_id])
+        else:
+            actual = len(self.processed_signals[block_name])
         if not actual == expected:
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
