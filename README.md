@@ -52,7 +52,7 @@ You can create a signal and send it from any block with:
 ```python
 notify_signals(block_name, signals, terminal="__default_terminal_value")
 ```
-You can create a signal and publish it to a topic to notify matching subscriber block(s)  with:
+You can create a signal and publish it to a topic to notify matching subscriber block(s) with:
 
 ```python
 publish_signals(topic, signals)
