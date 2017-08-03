@@ -27,13 +27,49 @@ pip3 install jsonschema
 
 ## Setting up your test class
 
-Generally speaking, you will have a service test file (and class) for each service. You can use *template_test_file.py* as a starting point for your service unit test files.
+Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files:
+
+```
+from nio.signal.base import Signal
+from .service_test_case import NioServiceTestCase
+
+
+class TestExampleService(NioServiceTestCase):
+
+    service_name = "ExampleService"
+
+    def subscriber_topics(self):
+        """Topics this service subscribes to"""
+        return ['topic1', 'topic2']
+
+    def publisher_topics(self):
+        """Topics this service publishes to"""
+        return ['topic3']
+
+    def env_vars(self):
+        """Environment variables"""
+        return {
+            "TEST_VARIABLE": "test variable"
+        }
+
+    def test_service(self):
+        topic1 = self.subscriber_topics()[0]
+        self.publish_signals(topic1, [Signal({
+            "data": self.env_vars()["TEST_VARIABLE"]
+        })])
+        self.wait_for_published_signals(1)
+        self.assert_num_signals_published(1)
+        self.assertDictEqual(self.published_signals[0].to_dict(), {
+            "data": "test variable"
+        })
+```
+
 
 Each test class can only contain unit tests for one service. These unit tests are not meant for testing interaction between services. Testing interactions between services would be integration testing.
 
 ### *service_name* class attribute
 
-The very first thing you need to do is set the class attribute *service_name* to your service name. This is how the test will know which service and blocks to load and configure.
+The very first thing you need to do is set the class attribute *service_name* to your service name. This is how the test will know which service and blocks to load and configure. Above this is set to "ExampleService".
 
 ### *subcriber_topics* and *pubisher_topics*
 
