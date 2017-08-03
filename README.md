@@ -55,12 +55,12 @@ class TestExampleService(NioServiceTestCase):
     def test_service(self):
         topic1 = self.subscriber_topics()[0]
         self.publish_signals(topic1, [Signal({
-            "data": self.env_vars["TEST_VARIABLE"]
+            "data": self.env_vars()["TEST_VARIABLE"]
         })])
         self.wait_for_published_signals(1)
         self.assert_num_signals_published(1)
         self.assertDictEqual(self.published_signals[0].to_dict(), {
-            "output": "signal"
+            "data": "test variable"
         })
 ```
 
