@@ -12,7 +12,7 @@ Then create a **tests** directory for your service unit tests.
 ```
 mkdir tests && touch tests/__init__.py
 ```
-Example project file structure:
+Example project file structure
 
 ```
 - nio.env
@@ -35,7 +35,7 @@ pip3 install jsonschema
 
 ## Setting Up Your Test Class
 
-Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files:
+Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files
 
 ```
 from nio.signal.base import Signal
@@ -84,12 +84,12 @@ Each test class can only contain unit tests for one service. These unit tests ar
 
 If your service has blocks that generate signals on their own (e.g., simulator blocks), then the service will already be running with signals when each test is entered. However, it's easier to test services when you have control over the created signals.
 
-You can create a signal and send it from any block with:
+You can create a signal and send it from any block with
 
 ```python
 notify_signals(block_name, signals, terminal="__default_terminal_value")
 ```
-You can create a signal and publish it to a topic to notify matching subscriber block(s) with:
+You can create a signal and publish it to a topic to notify matching subscriber block(s) with
 
 ```python
 publish_signals(topic, signals)
@@ -99,7 +99,7 @@ publish_signals(topic, signals)
 
 Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's publishers have published.
 
-Get published signals with:
+Get published signals with
 
 ```python
 published_signals(signals)
@@ -107,7 +107,7 @@ published_signals(signals)
 
 ## Waiting for Signals
 
-Instead of introducing sleeps or race conditions, wait for signals to be published with:
+Instead of introducing sleeps or race conditions, wait for signals to be published with
 
 ```python
 # count: number of cumulative signals to wait for since the service started
@@ -115,14 +115,14 @@ Instead of introducing sleeps or race conditions, wait for signals to be publish
 wait_for_published_signals(count=0, timeout=1)
 ```
 
-Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to notify a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with:
+Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to notify a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
 
 ```python
 from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
 JumpAheadScheduler.jump_ahead(10)
 ```
 
-Another option is to wait for a block to process signals:
+Another option is to wait for a block to process signals
 
 ```python
 wait_for_processed_signals(block, number, timeout)
