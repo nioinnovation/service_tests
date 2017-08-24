@@ -1,5 +1,5 @@
 from nio.modules.context import ModuleContext
-from nio.util.scheduler.job import Job
+from .job import Job
 from nio.modules.scheduler.module import SchedulerModule
 
 from .scheduler import Scheduler
