@@ -132,7 +132,7 @@ wait_for_processed_signals(block, number, timeout)
 
 You can also validate signals associated with publishers and subscribers by putting a JSON-schema formatted JSON file in one of three locations: `project_name/tests`, `project_name/`, or one directory above `project_name/`. For more information, see [http://json-schema.org/](http://json-schema.org/) and [https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf](https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf).
 
-Signals publishing to the specified topics will be validated according to the file specification.
+Signals published to the specified topics will be validated according to the file specification.
 
 For instance, this JSON schema will make sure that all signals published to the topic "test_topic" are dictionary objects with at least one property. All signals going into this topic are required to have a "test_attribute" attribute, which can be a string or integer. Any additional properties on the signal must be of type integer.
 
