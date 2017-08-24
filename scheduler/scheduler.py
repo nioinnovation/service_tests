@@ -26,6 +26,7 @@ class SchedulerRunner(Runner):
         self._events = dict()
         self._events_lock = RLock()
         self._process_events_thread = None
+        self.offset = 0
         # event used to wait for next task to execute and/or wait at scheduler
         # resolution
         self._sleep_interrupt_event = Event()
@@ -50,6 +51,7 @@ class SchedulerRunner(Runner):
         self._events.clear()
         if self._process_events_thread is not None:
             self._process_events_thread.join(self._sched_resolution)
+        self.offset = 0
 
     def schedule_task(self, target, delta, repeatable, *args, **kwargs):
         """ Add the given task to the Scheduler.
@@ -233,12 +235,39 @@ class SchedulerRunner(Runner):
                         self.logger.debug("Event: {0} was cancelled".
                                           format(event_id))
 
+    def jump_ahead(self, seconds):
+        """ Simulate a jump forward in time
+
+        This will update the scheduler's offset a certain number of seconds
+        in order to simulate time passing. Any scheduled jobs that should have
+        fired during the time that passed will fire after scheduler thread
+        takes control.
+
+        Note: To facilitate the scheduler event processing thread to take
+        control a 'sleep' call is invoked at the end of this method to
+        avoid having to follow up with a 'sleep' call every time this method
+        is invoked.
+
+        Args:
+            seconds (float): How many seconds to simulate passing in time.
+
+        Raises:
+            ValueError: If seconds is negative - can't go back in time
+        """
+        if float(seconds) < 0:
+            raise ValueError("Cannot jump backwards in time")
+
+        self.offset += seconds
+
+        # have scheduler execute tasks that might be ready after this jump
+        self._execute_pending_tasks()
+
     def _get_time(self):
         """ Time retrieval method to use when comparing against event time
         """
         # Use a clock that cannot go backwards.
         # This clock is not affected by system clock updates
-        return monotonic()
+        return monotonic() + self.offset
 
 # Singleton reference to a scheduler
 Scheduler = SchedulerRunner()

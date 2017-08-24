@@ -21,6 +21,7 @@ from .router import ServiceTestRouter
 from .module_persistence_file.module import FilePersistenceModule
 from .module_persistence_file.persistence import Persistence
 from .scheduler.module import TestingSchedulerModule
+from .scheduler.scheduler import Scheduler
 
 Persistence.save = MagicMock()
 Persistence.save_collection = MagicMock()
@@ -56,6 +57,7 @@ class NioServiceTestCase(NIOTestCase):
         super().__init__(methodName)
         self._blocks = {}
         self._router = ServiceTestRouter()
+        self._scheduler = Scheduler
         # Subscribe to publishers in the service
         self._subscribers = {}
         # Capture published signals for assertions
