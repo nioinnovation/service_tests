@@ -12,7 +12,7 @@ Then create a **tests** directory for your service unit tests.
 ```
 mkdir tests && touch tests/__init__.py
 ```
-Example project file structure
+Example project file structure:
 
 ```
 - nio.env
@@ -37,7 +37,7 @@ pip3 install jsonschema
 
 Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files
 
-```
+```py
 from nio.signal.base import Signal
 from .service_test_case import NioServiceTestCase
 
@@ -76,7 +76,7 @@ Each test class can only contain unit tests for one service. These unit tests ar
 
 **Set `service_name` Class Attribute**<br>The very first thing to do is change the class attribute `service_name` from "ExampleService" to your service name. This is how the test will know which service and blocks to load and configure.
 
-**Override `subcriber_topics` and `pubisher_topics`**<br>If the service has subscriber or publisher blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
+**Override `subscriber_topics` and `publisher_topics`**<br>If the service has subscriber or publisher blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
 
 **Add `env_vars`**<br>These service tests will not read from any of your project `.env` files so if you want to use some environment variables, override this method and have it return a dictionary that maps environment variable names to values.
 
