@@ -1,18 +1,27 @@
-from nio.modules.module import Module
-from nio.modules.scheduler.job import Job
+from nio.modules.context import ModuleContext
+from nio.util.scheduler.job import Job
+from nio.modules.scheduler.module import SchedulerModule
+
+from .scheduler import Scheduler
 
 
-class SchedulerModule(Module):
+class TestingSchedulerModule(SchedulerModule):
 
-    def proxy_job_class(self, job_class):
-        Job.proxy(job_class)
+    def initialize(self, context):
+        super().initialize(context)
+        # For testing, use a job class that allows us to jump ahead in time
+        self.proxy_job_class(Job)
+
+        Scheduler.do_configure(context)
+        Scheduler.do_start()
 
     def finalize(self):
-        Job.unproxy()
+        Scheduler.do_stop()
         super().finalize()
 
-    def get_module_order(self):
-        return 5
-
-    def get_module_type(self):
-        return "scheduler"
+    def prepare_core_context(self):
+        context = ModuleContext()
+        # set a fine resolution during tests
+        context.min_interval = 0.01
+        context.resolution = 0.01
+        return context
