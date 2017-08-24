@@ -20,7 +20,7 @@ from niocore.core.loader.discover import Discover
 from .router import ServiceTestRouter
 from .module_persistence_file.module import FilePersistenceModule
 from .module_persistence_file.persistence import Persistence
-from .scheduler.module import SchedulerModule
+from .scheduler.module import TestingSchedulerModule
 
 Persistence.save = MagicMock()
 Persistence.save_collection = MagicMock()
@@ -145,7 +145,7 @@ class NioServiceTestCase(NIOTestCase):
         if module_name == "persistence":
             return FilePersistenceModule()
         if module_name == "scheduler":
-            return SchedulerModule()
+            return TestingSchedulerModule()
         else:
             return super().get_module(module_name)
 
