@@ -3,7 +3,6 @@ from copy import copy, deepcopy
 from threading import Event
 
 from nio.router.base import BlockRouter
-from nio.util.threading.spawn import spawn
 
 
 class ServiceTestRouter(BlockRouter):
@@ -21,6 +20,12 @@ class ServiceTestRouter(BlockRouter):
         self._blocks = context.blocks
         self._setup_processed()
 
+    # add rlock here? override deliver_signals? asynch/synch block start?
+    # jump ahead?
+
+    # test with a bunch of services(niolabs tests are good, azz), optional turn
+    # off for this new behavior? make a custom module for scheduler and put it
+    # in this repo just like the custom persistence.
     def notify_signals(self, block, signals, output_id):
         if not signals:
             print("Block {} notified an empty signal list".format(block))
@@ -44,9 +49,9 @@ class ServiceTestRouter(BlockRouter):
                 cloned_signals = copy(signals)
             if input_id == "__default_terminal_value":
                 # don't include input_id if it's default terminal
-                spawn(to_block.process_signals, cloned_signals)
+                to_block.process_signals(cloned_signals)
             else:
-                spawn(to_block.process_signals, cloned_signals, input_id)
+                to_block.process_signals(cloned_signals, input_id)
 
     def _processed_signals_set(self, block_name):
         self._blocks[block_name]._processed_event.set()
