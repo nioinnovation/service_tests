@@ -1,11 +1,11 @@
 import json
+import jsonschema
 import os
 import re
 import sys
 from threading import Event
 from unittest.mock import MagicMock
 
-import jsonschema
 from nio.block.base import Block
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
@@ -16,9 +16,11 @@ from nio.router.context import RouterContext
 from nio.util.discovery import is_class_discoverable as _is_class_discoverable
 from nio.util.runner import RunnerStatus
 from niocore.core.loader.discover import Discover
+
 from .router import ServiceTestRouter
 from .module_persistence_file.module import FilePersistenceModule
 from .module_persistence_file.persistence import Persistence
+from .scheduler.module import SchedulerModule
 
 Persistence.save = MagicMock()
 Persistence.save_collection = MagicMock()
@@ -139,9 +141,11 @@ class NioServiceTestCase(NIOTestCase):
             return super().get_context(module_name, module)
 
     def get_module(self, module_name):
-        """ Override to use the file persistence """
+        """ Override to use the file persistence and scheduler """
         if module_name == "persistence":
             return FilePersistenceModule()
+        if module_name == "scheduler":
+            return SchedulerModule()
         else:
             return super().get_module(module_name)
 
