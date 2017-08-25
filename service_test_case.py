@@ -1,12 +1,12 @@
 import json
+import jsonschema
 import os
 import re
 import sys
 from threading import Event
 from unittest.mock import MagicMock
 
-import jsonschema
-from nio.block.base import Block
+from nio.block.base import Base
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -16,9 +16,13 @@ from nio.router.context import RouterContext
 from nio.util.discovery import is_class_discoverable as _is_class_discoverable
 from nio.util.runner import RunnerStatus
 from niocore.core.loader.discover import Discover
+
 from .router import ServiceTestRouter
-from .module_persistence_file.module import FilePersistenceModule
-from .module_persistence_file.persistence import Persistence
+from .modules.module_persistence_file.module import FilePersistenceModule
+from .modules.module_persistence_file.persistence import Persistence
+from .modules.module_scheduler_synchronous.module import \
+    SynchronousSchedulerModule
+from .modules.module_scheduler_synchronous.scheduler import SyncScheduler
 
 Persistence.save = MagicMock()
 Persistence.save_collection = MagicMock()
@@ -49,11 +53,14 @@ class NioServiceTestCase(NIOTestCase):
 
     service_name = None
     auto_start = True
+    synchronous = True
 
     def __init__(self, methodName='runTests'):
         super().__init__(methodName)
         self._blocks = {}
-        self._router = ServiceTestRouter()
+        self._router = ServiceTestRouter(self.synchronous)
+        # Set this Scheduler object to be used in tests for jump_ahead
+        self._scheduler = SyncScheduler if self.synchronous else None
         # Subscribe to publishers in the service
         self._subscribers = {}
         # Capture published signals for assertions
@@ -139,15 +146,17 @@ class NioServiceTestCase(NIOTestCase):
             return super().get_context(module_name, module)
 
     def get_module(self, module_name):
-        """ Override to use the file persistence """
+        """ Override to use the file persistence and scheduler """
         if module_name == "persistence":
             return FilePersistenceModule()
+        if module_name == "scheduler" and self.synchronous:
+            return SynchronousSchedulerModule()
         else:
             return super().get_module(module_name)
 
     def _setup_blocks(self):
         # Instantiate and configure blocks
-        blocks = Discover.discover_classes('blocks', Block, is_class_discoverable)
+        blocks = Discover.discover_classes('blocks', Base, is_class_discoverable)
         service_block_names = [service_block["name"] for service_block in
                                self.service_config.get("execution", [])]
         service_block_mappings = {}

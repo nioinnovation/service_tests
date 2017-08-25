@@ -3,14 +3,15 @@ from copy import copy, deepcopy
 from threading import Event
 
 from nio.router.base import BlockRouter
-from nio.util.threading.spawn import spawn
+from nio.util.threading import spawn
 
 
 class ServiceTestRouter(BlockRouter):
 
-    def __init__(self):
+    def __init__(self, synchronous):
         super().__init__()
         self._execution = []
+        self._synchronous = synchronous
         self._blocks = {}
         self._processed_signals = defaultdict(list)
         self.processed_signals_input = \
@@ -44,9 +45,15 @@ class ServiceTestRouter(BlockRouter):
                 cloned_signals = copy(signals)
             if input_id == "__default_terminal_value":
                 # don't include input_id if it's default terminal
-                spawn(to_block.process_signals, cloned_signals)
+                if self._synchronous:
+                    to_block.process_signals(cloned_signals)
+                else:
+                    spawn(to_block.process_signals, cloned_signals)
             else:
-                spawn(to_block.process_signals, cloned_signals, input_id)
+                if self._synchronous:
+                    to_block.process_signals(cloned_signals, input_id)
+                else:
+                    spawn(to_block.process_signals, cloned_signals, input_id)
 
     def _processed_signals_set(self, block_name):
         self._blocks[block_name]._processed_event.set()
