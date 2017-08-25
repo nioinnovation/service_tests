@@ -2,21 +2,21 @@ from nio.modules.context import ModuleContext
 from .job import Job
 from nio.modules.scheduler.module import SchedulerModule
 
-from .scheduler import Scheduler
+from .scheduler import SyncScheduler
 
 
-class TestingSchedulerModule(SchedulerModule):
+class SynchronousSchedulerModule(SchedulerModule):
 
     def initialize(self, context):
         super().initialize(context)
         # For testing, use a job class that allows us to jump ahead in time
         self.proxy_job_class(Job)
 
-        Scheduler.do_configure(context)
-        Scheduler.do_start()
+        SyncScheduler.do_configure(context)
+        SyncScheduler.do_start()
 
     def finalize(self):
-        Scheduler.do_stop()
+        SyncScheduler.do_stop()
         super().finalize()
 
     def prepare_core_context(self):

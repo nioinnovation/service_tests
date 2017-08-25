@@ -11,7 +11,7 @@ class ServiceTestRouter(BlockRouter):
     def __init__(self, synchronous):
         super().__init__()
         self._execution = []
-        self._synchronous = True
+        self._synchronous = synchronous
         self._blocks = {}
         self._processed_signals = defaultdict(list)
         self.processed_signals_input = \

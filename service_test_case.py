@@ -18,10 +18,11 @@ from nio.util.runner import RunnerStatus
 from niocore.core.loader.discover import Discover
 
 from .router import ServiceTestRouter
-from .module_persistence_file.module import FilePersistenceModule
-from .module_persistence_file.persistence import Persistence
-from .scheduler.module import TestingSchedulerModule
-from .scheduler.scheduler import Scheduler
+from .modules.module_persistence_file.module import FilePersistenceModule
+from .modules.module_persistence_file.persistence import Persistence
+from .modules.module_scheduler_synchronous.module import \
+    SynchronousSchedulerModule
+from .modules.module_scheduler_synchronous.scheduler import SyncScheduler
 
 Persistence.save = MagicMock()
 Persistence.save_collection = MagicMock()
@@ -58,7 +59,8 @@ class NioServiceTestCase(NIOTestCase):
         super().__init__(methodName)
         self._blocks = {}
         self._router = ServiceTestRouter(self.synchronous)
-        self._scheduler = Scheduler if self.synchronous else None
+        # Set this Scheduler object to be used in tests for jump_ahead
+        self._scheduler = SyncScheduler if self.synchronous else None
         # Subscribe to publishers in the service
         self._subscribers = {}
         # Capture published signals for assertions
@@ -148,7 +150,7 @@ class NioServiceTestCase(NIOTestCase):
         if module_name == "persistence":
             return FilePersistenceModule()
         if module_name == "scheduler" and self.synchronous:
-            return TestingSchedulerModule()
+            return SynchronousSchedulerModule()
         else:
             return super().get_module(module_name)
 

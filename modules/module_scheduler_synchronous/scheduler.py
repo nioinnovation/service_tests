@@ -13,7 +13,7 @@ from nio.util.threading import spawn
 QueueEvent = namedtuple('Event', 'time, id, target, frequency, args, kwargs')
 
 
-class SchedulerRunner(Runner):
+class SynchronousSchedulerRunner(Runner):
 
     def __init__(self):
         super().__init__()
@@ -270,4 +270,4 @@ class SchedulerRunner(Runner):
         return monotonic() + self.offset
 
 # Singleton reference to a scheduler
-Scheduler = SchedulerRunner()
+SyncScheduler = SynchronousSchedulerRunner()

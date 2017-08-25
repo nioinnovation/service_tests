@@ -1,14 +1,14 @@
-from .scheduler import Scheduler
+from .scheduler import SyncScheduler
 
 
 class Job(object):
 
     def __init__(self, target, delta, repeatable, *args, **kwargs):
-        self._job = Scheduler.schedule_task(
+        self._job = SyncScheduler.schedule_task(
             target, delta, repeatable, *args, **kwargs)
 
     def cancel(self):
-        Scheduler.unschedule(self._job)
+        SyncScheduler.unschedule(self._job)
 
     def jump_ahead(self, seconds):
         """ Jump the scheudler forward a certain number of seconds.
@@ -16,4 +16,4 @@ class Job(object):
         This is useful in tests to simulate time passing for event-driven
         logic and temporal assertions.
         """
-        Scheduler.jump_ahead(seconds)
+        SyncScheduler.jump_ahead(seconds)
