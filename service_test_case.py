@@ -6,7 +6,7 @@ import sys
 from threading import Event
 from unittest.mock import MagicMock
 
-from nio.block.base import Block
+from nio.block.base import Base
 from nio.block.context import BlockContext
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
@@ -153,7 +153,7 @@ class NioServiceTestCase(NIOTestCase):
 
     def _setup_blocks(self):
         # Instantiate and configure blocks
-        blocks = Discover.discover_classes('blocks', Block, is_class_discoverable)
+        blocks = Discover.discover_classes('blocks', Base, is_class_discoverable)
         service_block_names = [service_block["name"] for service_block in
                                self.service_config.get("execution", [])]
         service_block_mappings = {}
