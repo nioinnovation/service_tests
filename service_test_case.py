@@ -52,12 +52,13 @@ class NioServiceTestCase(NIOTestCase):
 
     service_name = None
     auto_start = True
+    synchronous = True
 
     def __init__(self, methodName='runTests'):
         super().__init__(methodName)
         self._blocks = {}
-        self._router = ServiceTestRouter()
-        self._scheduler = Scheduler
+        self._router = ServiceTestRouter(self.synchronous)
+        self._scheduler = Scheduler if self.synchronous else None
         # Subscribe to publishers in the service
         self._subscribers = {}
         # Capture published signals for assertions
@@ -146,7 +147,7 @@ class NioServiceTestCase(NIOTestCase):
         """ Override to use the file persistence and scheduler """
         if module_name == "persistence":
             return FilePersistenceModule()
-        if module_name == "scheduler":
+        if module_name == "scheduler" and self.synchronous:
             return TestingSchedulerModule()
         else:
             return super().get_module(module_name)
