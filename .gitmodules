@@ -1,6 +1,3 @@
-[submodule "module_persistence_file"]
-	path = module_persistence_file
-	url = git@github.com:nioinnovation/module_persistence_file.git
 [submodule "modules/module_persistence_file"]
 	path = modules/module_persistence_file
 	url = git@github.com:nioinnovation/module_persistence_file.git
