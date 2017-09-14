@@ -23,6 +23,7 @@ Example project file structure:
   - __init__.py
 - service_tests/
   - service_test_case.py
+...
 ```
 
 If you cloned the project template repo from [https://github.com/nioinnovation/project_template](https://github.com/nioinnovation/project_template) at the start of your project, this will already be set up for you.
@@ -35,9 +36,9 @@ pip3 install jsonschema
 
 ## Setting Up Your Test Class
 
-Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files
+Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files:
 
-```py
+```python
 from nio.signal.base import Signal
 from .service_test_case import NioServiceTestCase
 
@@ -65,9 +66,8 @@ class TestExampleService(NioServiceTestCase):
         self.publish_signals(topic1, [Signal({
             "data": self.env_vars()["TEST_VARIABLE"]
         })])
-        self.wait_for_published_signals(1)
         self.assert_num_signals_published(1)
-        self.assertDictEqual(self.published_signals[0].to_dict(), {
+        self.assert_signal_published({
             "data": "test variable"
         })
 ```
@@ -84,30 +84,49 @@ Each test class can only contain unit tests for one service. These unit tests ar
 
 If your service has blocks that generate signals on their own (e.g., simulator blocks), then the service will already be running with signals when each test is entered. However, it's easier to test services when you have control over the created signals.
 
-You can create a signal and send it from any block with
+You can create a signal and send it from any block with:
 
 ```python
-notify_signals(block_name, signals, terminal="__default_terminal_value")
+self.notify_signals(block_name, signals)
 ```
-You can create a signal and publish it to a topic to notify matching subscriber block(s) with
+You can create a signal and publish it to a topic to notify from the matching subscriber block(s) with:
 
 ```python
-publish_signals(topic, signals)
+self.publish_signals(topic, signals)
 ```
 
 ## Making Assertions about Signals
 
 Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's publishers have published.
 
-Get published signals with
+Get published signals with:
 
 ```python
-published_signals(signals)
+self.published_signals()
 ```
 
-## Waiting for Signals
+Get processed signals with:
 
-Instead of introducing sleeps or race conditions, wait for signals to be published with
+```python
+self.processed_signals()["block_name"]
+```
+
+Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to notify a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
+
+```python
+self._scheduler.jump_ahead(seconds=10)
+```
+
+
+## Asynchronous Service Tests
+
+There is an option to run the service tests asynchronously by setting the class attribute `synchronous=False`.
+This will run the service as it would on an actual nio instance. Because of this behavior, some waiting is required
+to make sure that signals get to their destination before doing assertions on them.
+
+### Waiting for Signals (Asynchronous)
+
+Wait for signals to be published with:
 
 ```python
 # count: number of cumulative signals to wait for since the service started
@@ -115,14 +134,7 @@ Instead of introducing sleeps or race conditions, wait for signals to be publish
 wait_for_published_signals(count=0, timeout=1)
 ```
 
-Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to notify a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
-
-```python
-from nio.testing.modules.scheduler.scheduler import JumpAheadScheduler
-JumpAheadScheduler.jump_ahead(10)
-```
-
-Another option is to wait for a block to process signals
+Another option is to wait for a block to process signals:
 
 ```python
 wait_for_processed_signals(block, number, timeout)
