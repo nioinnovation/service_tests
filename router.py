@@ -64,11 +64,8 @@ class ServiceTestRouter(BlockRouter):
         its process_signals.
         """
         def process_wrapper(*args, **kwargs):
-            try:
-                input_id = args[1] if len(args) > 1 else None
-                process_signals(*args, **kwargs)
-            except Exception as e:
-                print("Exception in block {}: {}".format(block_name, e))
+            input_id = args[1] if len(args) > 1 else None
+            process_signals(*args, **kwargs)
             self._processed_signals[block_name].extend(args[0])
             self.processed_signals_input[block_name][input_id].extend(args[0])
             self._processed_signals_set(block_name)
