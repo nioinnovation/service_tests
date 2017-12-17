@@ -1,12 +1,16 @@
 # nio Service Unit Tests
 
-A testing framework for writing and running unit tests for nio services.
+Testing is a necessary part of designing a robust nio system. For self-managed instances, you can ensure your block or service configurations are performing correctly with the [Service Unit Test Framework](https://github.com/niolabs/service_tests).
 
-## How to Use
+Service unit tests are written in Python code and make use of the [Python unittest module](https://docs.python.org/3/library/unittest.html).
+
+## Getting Started
+
+If you installed the nio [project template](https://github.com/niolabs/project_template) using the nio CLI or from the repository, then your test files are all set up in your project directory. If not, complete the following steps:
 
 Clone this repo into your nio project directory as a submodule
 ```
-git submodule add https://github.com/nioinnovation/service_tests.git
+git submodule add https://github.com/niolabs/service_tests.git
 ```
 Then create a **tests** directory for your service unit tests.
 ```
@@ -23,10 +27,7 @@ Example project file structure:
   - __init__.py
 - service_tests/
   - service_test_case.py
-...
 ```
-
-If you cloned the project template repo from [https://github.com/nioinnovation/project_template](https://github.com/nioinnovation/project_template) at the start of your project, this will already be set up for you.
 
 Install _jsonschema_ for publisher/subscriber topic validation.
 
