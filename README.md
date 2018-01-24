@@ -1,10 +1,12 @@
-# nio Service Unit Tests
+# nio service unit tests
 
 Testing is a necessary part of designing a robust nio system. For self-managed instances, you can ensure your block or service configurations are performing correctly with the [Service Unit Test Framework](https://github.com/niolabs/service_tests).
 
 Service unit tests are written in Python code and make use of the [Python unittest module](https://docs.python.org/3/library/unittest.html).
 
-## Getting Started
+---
+
+## Getting started
 
 If you installed the nio [project template](https://github.com/niolabs/project_template) using the nio CLI or from the repository, then your test files are all set up in your project directory. If not, complete the following steps:
 
@@ -35,9 +37,11 @@ Install _jsonschema_ for publisher/subscriber topic validation.
 pip3 install jsonschema
 ```
 
-## Setting Up Your Test Class
+---
 
-Generally speaking, you will have a service test file (and class) for each service. You can use the following example as starting point for your service unit test files:
+## Setting up your test class
+
+Generally speaking, you will have a service test file (and class) for each service. You can use the following example as a starting point for your service unit test files:
 
 ```python
 from nio.signal.base import Signal
@@ -75,30 +79,34 @@ class TestExampleService(NioServiceTestCase):
 
 Each test class can only contain unit tests for one service. These unit tests are not meant for testing interaction between services. Testing interactions between services would be integration testing.
 
-**Set `service_name` Class Attribute**<br>The very first thing to do is change the class attribute `service_name` from "ExampleService" to your service name. This is how the test will know which service and blocks to load and configure.
+**Set `service_name` class attribute**<br>The very first thing to do is change the class attribute `service_name` from **ExampleService** to your service name. This is how the test will know which service and blocks to load and configure.
 
-**Override `subscriber_topics` and `publisher_topics`**<br>If the service has subscriber or publisher blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
+**Override `subscriber_topics` and `publisher_topics`**<br>If the service has _Subscriber_ or _Publisher_ blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
 
 **Add `env_vars`**<br>These service tests will not read from any of your project `.env` files so if you want to use some environment variables, override this method and have it return a dictionary that maps environment variable names to values.
 
-## Kicking Off Tests
+---
 
-If your service has blocks that generate signals on their own (e.g., simulator blocks), then the service will already be running with signals when each test is entered. However, it's easier to test services when you have control over the created signals.
+## Kicking off tests
+
+If your service has blocks that generate signals on their own (e.g., _Simulator_ blocks), then the service will already be running with signals when each test is entered. However, it's easier to test services when you have control over the created signals.
 
 You can create a signal and send it from any block with:
 
 ```python
 self.notify_signals(block_name, signals)
 ```
-You can create a signal and publish it to a topic to notify from the matching subscriber block(s) with:
+You can create a signal and publish it to a topic to notify from the matching _Subscriber_ block(s) with:
 
 ```python
 self.publish_signals(topic, signals)
 ```
 
-## Making Assertions about Signals
+---
 
-Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's publishers have published.
+## Making assertions about signals
+
+Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's _Publisher_ blocks have published.
 
 Get published signals with:
 
@@ -112,20 +120,21 @@ Get processed signals with:
 self.processed_signals()["block_name"]
 ```
 
-Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to notify a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
+Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to emit a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
 
 ```python
 self._scheduler.jump_ahead(seconds=10)
 ```
 
+---
 
-## Asynchronous Service Tests
+## Asynchronous service tests
 
 There is an option to run the service tests asynchronously by setting the class attribute `synchronous=False`.
 This will run the service as it would on an actual nio instance. Because of this behavior, some waiting is required
 to make sure that signals get to their destination before doing assertions on them.
 
-### Waiting for Signals (Asynchronous)
+### Waiting for signals (asynchronous)
 
 Wait for signals to be published with:
 
@@ -141,13 +150,15 @@ Another option is to wait for a block to process signals:
 wait_for_processed_signals(block, number, timeout)
 ```
 
-## Subscriber/Publisher Topic Validation with _jsonschema_
+---
 
-You can also validate signals associated with publishers and subscribers by putting a JSON-schema formatted JSON file in one of three locations: `project_name/tests`, `project_name/`, or one directory above `project_name/`. For more information, see [http://json-schema.org/](http://json-schema.org/) and [https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf](https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf).
+## Subscriber/Publisher topic validation with _jsonschema_
+
+You can also validate signals associated with _Publisher_ and _Subscriber_ blocks by putting a JSON-schema formatted JSON file in one of three locations: `project_name/tests`, `project_name/`, or one directory above `project_name/`. For more information, see <http://json-schema.org/> and <https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf>.
 
 Signals published to the specified topics will be validated according to the file specification.
 
-For instance, this JSON schema will make sure that all signals published to the topic "test_topic" are dictionary objects with at least one property. All signals going into this topic are required to have a "test_attribute" attribute, which can be a string or integer. Any additional properties on the signal must be of type integer.
+For instance, this JSON schema will make sure that all signals published to the topic "test_topic" are dictionary objects with at least one property. All signals going into this topic are required to have a **test_attribute** attribute, which can be a string or integer. Any additional properties on the signal must be of type integer.
 
 ```python
 {
@@ -163,6 +174,8 @@ For instance, this JSON schema will make sure that all signals published to the 
   }
 }
 ```
+
+---
 
 ## Test
 
