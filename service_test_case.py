@@ -3,6 +3,7 @@ import jsonschema
 import os
 import re
 import sys
+import uuid
 from threading import Event
 from unittest.mock import MagicMock
 
@@ -174,6 +175,7 @@ class NioServiceTestCase(NIOTestCase):
                 continue
             # use mapping name for block
             block_config["name"] = service_block_name
+            block_config["id"] = uuid.uuid4()
             # instantiate the block
             block = self._init_block(block_config, blocks)
             block_config = self._override_block_config(block_config)
@@ -201,6 +203,7 @@ class NioServiceTestCase(NIOTestCase):
         if block_config["name"] in self.mock_blocks():
             block = MagicMock()
             block.name.return_value = block_config["name"]
+            block.id.return_value = block_config["id"]
             block.process_signals.side_effect = \
                 self.mock_blocks()[block_config["name"]]
         else:
