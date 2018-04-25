@@ -28,16 +28,17 @@ class ServiceTestRouter(BlockRouter):
             return
         from_block_name = block.name()
         all_receivers = [block["receivers"] for block in self._execution
-                         if block["name"] == from_block_name][0]
+                         if block["id"] == from_block_name][0]
         if not all_receivers:
             return
         # If output_id isn't in receivers, then use default output
         receivers = all_receivers.get(
             output_id, all_receivers.get("__default_terminal_value", []))
         for receiver in receivers:
-            receiver_name = receiver["name"]
+            receiver_id = receiver["id"]
             input_id = receiver["input"]
-            to_block = self._blocks[receiver_name]
+            to_block = self._blocks[receiver_id]
+            receiver_name = to_block.name()
             print("{} -> {}".format(from_block_name, receiver_name))
             try:
                 cloned_signals = deepcopy(signals)
