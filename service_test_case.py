@@ -121,6 +121,7 @@ class NioServiceTestCase(NIOTestCase):
         self._invalid_topics = {}
         persistence = Persistence()
         self.block_configs = persistence.load_collection("blocks")
+        self.block_configs = {v.get('id', v['name']): v for k, v in self.block_configs.items()}
         self.service_configs = persistence.load_collection("services")
         self.service_config = self.service_configs.get(self.service_name, {})
         self._setup_blocks()
@@ -158,23 +159,23 @@ class NioServiceTestCase(NIOTestCase):
     def _setup_blocks(self):
         # Instantiate and configure blocks
         blocks = Discover.discover_classes('blocks', Base, is_class_discoverable)
-        service_block_names = [service_block["id"] for service_block in
+        service_block_ids = [service_block["id"] for service_block in
                                self.service_config.get("execution", [])]
         service_block_mappings = {}
         for mapping in self.service_config.get("mappings", []):
             service_block_mappings[mapping["id"]] = mapping["mapping"]
-        for service_block_name in service_block_names:
+        for service_block_id in service_block_ids:
             # get mapping name or leave original name
-            mapping_name = service_block_mappings.get(service_block_name,
-                                                      service_block_name)
-            block_config = self.block_configs.get(mapping_name)
+            mapping_id = service_block_mappings.get(service_block_id,
+                                                      service_block_id)
+            block_config = self.block_configs.get(mapping_id)
             if not block_config:
                 # skip blocks that don't have a config - this is a problem
                 print('Could not get a config for block: {}, skipping.'
-                      .format(service_block_name))
+                      .format(service_block_id))
                 continue
             # use mapping name for block
-            block_config["name"] = service_block_name
+            block_config["name"] = service_block_id
             block_config["id"] = uuid.uuid4()
             # instantiate the block
             block = self._init_block(block_config, blocks)
@@ -182,7 +183,7 @@ class NioServiceTestCase(NIOTestCase):
             block_config = self._replace_env_vars(block_config)
             block.configure(BlockContext(
                 self._router, block_config, 'TestSuite', ''))
-            self._blocks[service_block_name] = block
+            self._blocks[service_block_id] = block
         # Configure router
         self._router.configure(RouterContext(
             execution=self.service_config.get("execution", []),
