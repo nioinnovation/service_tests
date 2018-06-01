@@ -120,8 +120,12 @@ class NioServiceTestCase(NIOTestCase):
         super().setUp()
         self._invalid_topics = {}
         persistence = Persistence()
-        self.block_configs = persistence.load_collection("blocks")
-        self.block_configs = {v.get('id', v['name']): v for k, v in self.block_configs.items()}
+        self.block_configs = {}
+        _block_configs = persistence.load_collection("blocks")
+        for _, config in _block_configs.items():
+            # replace filename in key with id, or name, for mapping lookup
+            key = config.get("id", config["name"])
+            self.block_configs[key] = config
         self.service_configs = persistence.load_collection("services")
         self.service_config = self.service_configs.get(self.service_name, {})
         self._setup_blocks()
