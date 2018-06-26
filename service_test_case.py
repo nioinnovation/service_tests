@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 
 from nio.block.base import Base
 from nio.block.context import BlockContext
+from nio.modules.persistence import Persistence
 from nio.modules.communication.publisher import Publisher
 from nio.modules.communication.subscriber import Subscriber
 from nio.modules.context import ModuleContext
@@ -19,14 +20,12 @@ from nio.util.runner import RunnerStatus
 from niocore.core.loader.discover import Discover
 
 from .router import ServiceTestRouter
-from .modules.module_persistence_file.module import FilePersistenceModule
-from .modules.module_persistence_file.persistence import Persistence
+from .modules.module_persistence_file.persistence import \
+    Persistence as FilePersistence
 from .modules.module_scheduler_synchronous.module import \
     SynchronousSchedulerModule
 from .modules.module_scheduler_synchronous.scheduler import SyncScheduler
 
-Persistence.save = MagicMock()
-Persistence.save_collection = MagicMock()
 
 
 def is_class_discoverable(_class, default_discoverability=True):
@@ -112,14 +111,29 @@ class NioServiceTestCase(NIOTestCase):
         """Optionally override block config for the tests"""
         return {}
 
+    def override_block_persistence(self):
+        """ Return a dict with a mapping of block ID to persited values """
+        return {}
+
     def env_vars(self):
         """Optionally override to set environment variable values"""
         return {}
 
+    def __setup_file_persistence(self):
+        context = ModuleContext()
+        context.root_folder = "{}/../{}".format(
+            os.path.dirname(
+                sys.modules[self.__class__.__module__].__file__),
+            "etc")
+        context.root_id = ''
+        context.format = FilePersistence.Format.json.value
+        FilePersistence.configure(context)
+        return FilePersistence()
+
     def setUp(self):
         super().setUp()
         self._invalid_topics = {}
-        persistence = Persistence()
+        persistence = self.__setup_file_persistence()
         self.block_configs = {}
         _block_configs = persistence.load_collection("blocks")
         for _, config in _block_configs.items():
@@ -128,6 +142,7 @@ class NioServiceTestCase(NIOTestCase):
             self.block_configs[key] = config
         self.service_configs = persistence.load_collection("services")
         self.service_config = self.service_configs.get(self.service_name, {})
+        self._setup_block_persistence()
         self._setup_blocks()
         self._setup_pubsub()
         self._setup_json_schema()
@@ -138,27 +153,18 @@ class NioServiceTestCase(NIOTestCase):
     def get_test_modules(self):
         return {'settings', 'scheduler', 'persistence', 'communication'}
 
-    def get_context(self, module_name, module):
-        if module_name == "persistence":
-            context = ModuleContext()
-            context.root_folder = "{}/../{}".format(
-                os.path.dirname(
-                    sys.modules[self.__class__.__module__].__file__),
-                "etc")
-            context.root_id = ''
-            context.format = Persistence.Format.json.value
-            return context
-        else:
-            return super().get_context(module_name, module)
-
     def get_module(self, module_name):
         """ Override to use the file persistence and scheduler """
-        if module_name == "persistence":
-            return FilePersistenceModule()
         if module_name == "scheduler" and self.synchronous:
             return SynchronousSchedulerModule()
         else:
             return super().get_module(module_name)
+
+    def _setup_block_persistence(self):
+        def persit_load(persist_id, default=None):
+            return self.override_block_persistence().get(persist_id, default)
+
+        Persistence.load = MagicMock(side_effect=persit_load)
 
     def _setup_blocks(self):
         # Instantiate and configure blocks
@@ -180,7 +186,7 @@ class NioServiceTestCase(NIOTestCase):
                 continue
             # use mapping name for block
             block_config["name"] = service_block_id
-            block_config["id"] = uuid.uuid4()
+            block_config["id"] = block_config.get('id', uuid.uuid4())
             # instantiate the block
             block = self._init_block(block_config, blocks)
             block_config = self._override_block_config(block_config)
