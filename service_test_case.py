@@ -141,7 +141,7 @@ class NioServiceTestCase(NIOTestCase):
             key = config.get("id", config["name"])
             self.block_configs[key] = config
         self.service_configs = persistence.load_collection("services")
-        self.service_config = self.service_configs.get(self.service_name, {})
+        self.service_config = self.get_service_config(self.service_name)
         self._setup_block_persistence()
         self._setup_blocks()
         self._setup_pubsub()
@@ -149,6 +149,39 @@ class NioServiceTestCase(NIOTestCase):
         # Start blocks
         if self.auto_start:
             self.start()
+
+    def _find_resource(self, resource_identifier, resources):
+        """ Find a resource in a list of resources based on identifier
+
+        Args:
+            resource_identifier (str) - The name or id of the resource
+            resources (dict/list) - A dict where the resources are values or a
+                list of resource values to search
+
+        Returns:
+            resource - The resource if its id or name matches, in that order
+
+        Raises:
+            KeyError - If the resource can't be found
+        """
+        if isinstance(resources, dict) and resource_identifier in resources:
+            return resources[resource_identifier]
+        if isinstance(resources, dict):
+            resources = list(resources.values())
+        for resource in resources:
+            if resource['id'] == resource_identifier:
+                return resource
+        for resource in resources:
+            if resource['name'] == resource_identifier:
+                return resource
+        raise KeyError(
+            "No resource with identifier {} found".format(resource_identifier))
+
+    def get_service_config(self, service_identifier):
+        return self._find_resource(service_identifier, self.service_configs)
+
+    def get_block_config(self, block_identifier):
+        return self._find_resource(block_identifier, self.block_configs)
 
     def get_test_modules(self):
         return {'settings', 'scheduler', 'persistence', 'communication'}

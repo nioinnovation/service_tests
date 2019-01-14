@@ -79,7 +79,7 @@ class TestExampleService(NioServiceTestCase):
 
 Each test class can only contain unit tests for one service. These unit tests are not meant for testing interaction between services. Testing interactions between services would be integration testing.
 
-**Set `service_name` class attribute**<br>The very first thing to do is change the class attribute `service_name` from **ExampleService** to your service name. This is how the test will know which service and blocks to load and configure.
+**Set `service_name` class attribute**<br>The very first thing to do is change the class attribute `service_name` from **ExampleService** to your service name. This is how the test will know which service and blocks to load and configure. You can use your service's name or ID for this variable.
 
 **Override `subscriber_topics` and `publisher_topics`**<br>If the service has _Subscriber_ or _Publisher_ blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
 
