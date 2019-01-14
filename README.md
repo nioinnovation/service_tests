@@ -79,7 +79,7 @@ class TestExampleService(NioServiceTestCase):
 
 Each test class can only contain unit tests for one service. These unit tests are not meant for testing interaction between services. Testing interactions between services would be integration testing.
 
-**Set `service_name` class attribute**<br>The very first thing to do is change the class attribute `service_name` from **ExampleService** to your service name. This is how the test will know which service and blocks to load and configure.
+**Set `service_name` class attribute**<br>The very first thing to do is change the class attribute `service_name` from **ExampleService** to your service name. This is how the test will know which service and blocks to load and configure. You can use your service's name or ID for this variable.
 
 **Override `subscriber_topics` and `publisher_topics`**<br>If the service has _Subscriber_ or _Publisher_ blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
 
@@ -108,16 +108,16 @@ self.publish_signals(topic, signals)
 
 Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's _Publisher_ blocks have published.
 
-Get published signals with:
-
+You can assert that your service published a certain number of signals using the service's assertion helper method:
 ```python
-self.published_signals()
+# Make sure our service published 3 signals
+self.assert_num_signals_published(3)
 ```
 
-Get processed signals with:
+Get the actual published signals of the service with:
 
 ```python
-self.processed_signals()["block_name"]
+self.published_signals
 ```
 
 Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to emit a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
@@ -126,13 +126,25 @@ Most blocks also support the ability to fake time so you can jump ahead in time 
 self._scheduler.jump_ahead(seconds=10)
 ```
 
+### Block names and block IDs
+
+Blocks (and services) can have an optional name along with their ID. In most methods in the service test you can provide either a block's name or ID to reference a block. You can find a block's ID by opening the block edit modal in the System Designer.
+
+If your service uses two of the same block config it is best to refer to the blocks by their IDs rather than their names in the tests. This prevents undefined behavior from selecting/targeting the wrong block.
+
+If referencing a block in a dictionary (like `self.processed_signals`) you must use the block ID. The service test provides a helpful method to determine a block ID based on the name, `self.get_block_id(name)`. 
+
+So, to get the processed signals for a block named `'blocky'` you would do this:
+```python
+self.processed_signals[self.get_block_id('blocky')]
+```
+
 ---
 
 ## Asynchronous service tests
 
 There is an option to run the service tests asynchronously by setting the class attribute `synchronous=False`.
-This will run the service as it would on an actual nio instance. Because of this behavior, some waiting is required
-to make sure that signals get to their destination before doing assertions on them.
+This will run the service as it would on an actual nio instance. Because of this behavior, some waiting is required to make sure that signals get to their destination before doing assertions on them.
 
 ### Waiting for signals (asynchronous)
 

@@ -1,3 +1,4 @@
+from copy import copy
 import json
 import jsonschema
 import os
@@ -33,7 +34,7 @@ def is_class_discoverable(_class, default_discoverability=True):
 
 
 class NioServiceTestCase(NIOTestCase):
-    """Base test case for n.io services
+    """Base test case for nio services
 
     To use:
         * Override class variable `service_name`.
@@ -45,7 +46,7 @@ class NioServiceTestCase(NIOTestCase):
             `override_block_configs`
         * Use `wait_for_published_signals(self, count=0, timeout=1)` instead
             of sleep
-        * Set n.io environment variables with `env_vars`.
+        * Set nio environment variables with `env_vars`.
         * Mock blocks with `mock_blocks` by mapping block names to mocked
             process_signals method for that block.
         * Test by notifying signals from a block with `notify_signals`
@@ -141,7 +142,7 @@ class NioServiceTestCase(NIOTestCase):
             key = config.get("id", config["name"])
             self.block_configs[key] = config
         self.service_configs = persistence.load_collection("services")
-        self.service_config = self.service_configs.get(self.service_name, {})
+        self.service_config = self.get_service_config(self.service_name)
         self._setup_block_persistence()
         self._setup_blocks()
         self._setup_pubsub()
@@ -149,6 +150,51 @@ class NioServiceTestCase(NIOTestCase):
         # Start blocks
         if self.auto_start:
             self.start()
+
+    def _find_resource(self, resource_identifier, resources):
+        """ Find a resource in a list of resources based on identifier
+
+        Args:
+            resource_identifier (str) - The name or id of the resource
+            resources (dict/list) - A dict where the resources are values or a
+                list of resource values to search
+
+        Returns:
+            resource - The resource if its id or name matches, in that order
+
+        Raises:
+            KeyError - If the resource can't be found
+        """
+        if isinstance(resources, dict) and resource_identifier in resources:
+            return resources[resource_identifier]
+        if isinstance(resources, dict):
+            resources = list(resources.values())
+        for resource in resources:
+            if resource['id'] == resource_identifier:
+                return resource
+        for resource in resources:
+            if resource['name'] == resource_identifier:
+                return resource
+        raise KeyError(
+            "No resource with identifier {} found".format(resource_identifier))
+
+    def get_service_config(self, service_identifier):
+        return self._find_resource(service_identifier, self.service_configs)
+
+    def get_block_config(self, block_identifier):
+        return self._find_resource(block_identifier, self.block_configs)
+
+    def get_block(self, block_identifier):
+        """ Get a block instance based on identifier """
+        return self._blocks[self.get_block_id(block_identifier)]
+
+    def get_block_id(self, block_identifier):
+        # We'll first try to just lookup in _blocks for the ID
+        # We do this in case of block mappings in the service
+        if block_identifier in self._blocks:
+            return block_identifier
+        # Otherwise we have to get the block ID from the block configs
+        return self._find_resource(block_identifier, self.block_configs)['id']
 
     def get_test_modules(self):
         return {'settings', 'scheduler', 'persistence', 'communication'}
@@ -178,7 +224,7 @@ class NioServiceTestCase(NIOTestCase):
             # get mapping name or leave original name
             mapping_id = service_block_mappings.get(service_block_id,
                                                       service_block_id)
-            block_config = self.block_configs.get(mapping_id)
+            block_config = copy(self.block_configs.get(mapping_id))
             if not block_config:
                 # skip blocks that don't have a config - this is a problem
                 print('Could not get a config for block: {}, skipping.'
@@ -298,8 +344,16 @@ class NioServiceTestCase(NIOTestCase):
 
     def _override_block_config(self, block_config):
         """override a blocks config with the given block config"""
-        new_block_config = self.override_block_configs().get(
-            block_config["name"], block_config)
+        new_block_config = {}
+        # Find the new block config they want, we need to check name and id
+        for bc_key, bc_val in self.override_block_configs().items():
+            try:
+                if self.get_block_id(bc_key) == block_config['id']:
+                    new_block_config = bc_val
+                    break
+            except KeyError:
+                # ignore invalid keys in the override block config dict here
+                pass
         for property in new_block_config:
             block_config[property] = new_block_config[property]
         return block_config
@@ -309,16 +363,17 @@ class NioServiceTestCase(NIOTestCase):
         """ Wait the given timeout for the given block's number of processed
         signals to be equal to count.
         """
+        block_id = self.get_block_id(block_name)
         if not count:
-            self._blocks[block_name]._processed_event.wait(timeout)
+            self._blocks[block_id]._processed_event.wait(timeout)
         else:
             if input_id is not None:
                 signal_list = \
-                    self._router.processed_signals_input[block_name][input_id]
+                    self._router.processed_signals_input[block_id][input_id]
             else:
-                signal_list = self._router._processed_signals[block_name]
+                signal_list = self._router._processed_signals[block_id]
             while count > len(signal_list):
-                if not self._blocks[block_name]._processed_event.wait(timeout):
+                if not self._blocks[block_id]._processed_event.wait(timeout):
                     return
 
     def wait_for_published_signals(self, count=0, timeout=1):
@@ -341,12 +396,13 @@ class NioServiceTestCase(NIOTestCase):
 
     def command_block(self, block_name, command_name, **kwargs):
         """call a specified blocks command with given keyword arguments"""
+        block_id = self.get_block_id(block_name)
         try:
-            command = getattr(self._blocks[block_name], command_name)
+            command = getattr(self._blocks[block_id], command_name)
         except Exception as e:
             raise AssertionError('Could not get block command: {}. Commands '
                                  'for this block: {}'.format(command_name,
-                                 list(self._blocks[block_name].get_commands().keys())),
+                                 list(self._blocks[block_id].get_commands().keys())),
                                  e)
         else:
             command(**kwargs)
@@ -420,11 +476,12 @@ class NioServiceTestCase(NIOTestCase):
             raise TypeError('Amount of processed signals can only be an int. '
                             'Got type {}: {}'.format(type(expected), expected))
 
+        block_id = self.get_block_id(block_name)
         if input_id is not None:
             actual = \
-                len(self._router.processed_signals_input[block_name][input_id])
+                len(self._router.processed_signals_input[block_id][input_id])
         else:
-            actual = len(self.processed_signals[block_name])
+            actual = len(self.processed_signals[block_id])
         if not actual == expected:
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
