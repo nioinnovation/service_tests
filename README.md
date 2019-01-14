@@ -140,6 +140,152 @@ self.processed_signals[self.get_block_id('blocky')]
 
 ---
 
+## Customization
+
+The service test base class allows for some customization about how your service runs
+
+###  Custom block config
+
+You can override a block's configuration by implementing the `override_block_configs` method in your test class. This method should return a dictionary where the keys are block names or IDs and the value is a dictionary of properties to change on the block. Note that the properties are merged in to the existing properties, not replaced.
+
+For example, assume we have a simulator block configured to emit 1 signal every 30 mintues:
+**my_sim_block.cfg**
+```json
+{
+    "interval": {
+        "days": 0,
+        "microseconds": 0,
+        "seconds": 1800
+    },
+    "name": "my_sim_block",
+    "num_signals": 1,
+    "total_signals": -1,
+    "type": "CounterIntervalSimulator"
+}
+```
+
+In our test, we can override the behavior of the block to emit a signal every 5 seconds instead by adding this method implementation to the block class:
+```python
+def override_block_configs(self):
+    return {
+        "my_sim_block": {
+            "interval": {
+                "days": 0,
+                "microseconds": 0,
+                "seconds": 5
+            }
+        }
+    }
+```
+
+### Mocking Blocks
+
+Sometimes you don't want a block to process a signal at all, or you want to make much richer assertions about the block's behavior. Rather than just changing a block's configuration, the service test class provides the ability to replace a running block with a Python `Mock` instance. This can be useful if your block makes remote API calls or connections that you don't want to occur when running tests.
+
+To mock a block, return a dictionary with the key being the name/ID of the block in the `mock_blocks` method in your service test. This example will mock a block called `'send_tweets'` with a Python `Mock` instance.
+
+```python
+def mock_blocks(self):
+    return {
+        "send_tweets": Mock()
+    }
+```
+
+You can also mock just a block's process signals function by providing a method as the value rather than a Mock instance. Doing this allows the block to configure and start like normal but allows you to control the `process_signals` method call in the test. This example will call the test's custom process signals method on the `'send_tweets'` block:
+```python
+def my_custom_process_signals(self, signals):
+    print("The test processed {} signals".format(len(signals)))
+
+def mock_blocks(self):
+    return {
+        "send_tweets": self.my_custom_process_signals
+    }
+```
+
+### Custom Environment/User Defined Variables
+
+Tests can use custom environment or user-defined variables by returning them in the `env_vars` method in your test class.
+
+```python
+def env_vars(self):
+    return {
+        "DATABASE_HOST": "localhost"
+    }
+```
+
+### Custom Block Persistence
+
+To simulate and test a service's behavior given specific block persistence values, return the desired initial persistence state in your service test's `override_block_persistence` method. This example has the `'counter_block'` block start off with a cumulative count of 10 rather than the default of 0.
+```python
+def override_block_persistence(self):
+    return {
+        'counter_block': {
+            '_cumulative_count': { None: 10 }
+        }
+    }
+```
+*Note: the `{None: 10}` syntax is due to the way the Counter block processes counts with groups. It is essentially setting the count of the `None` group to 10. Look at block code or existing persistence files to figure out the right format for your use case*
+
+---
+## Assertions
+
+The service test case base class comes with some handy assertion methods that can be used in your test cases.
+
+### assert_num_signals_published
+
+Make sure a certain number of signals was published by the service.
+
+```python
+def assert_num_signals_published(self,
+    expected,  # int - the number of signals expected
+)
+```
+
+**Example:**
+```python
+# Make sure 5 signals were published by the service
+self.assert_num_signals_published(5)
+```
+
+### assert_num_signals_processed
+
+Make sure a certain number of signals was processed by a particular block
+
+```python
+def assert_num_signals_processed(self,
+    expected,  # int - the number of signals expected
+    block_name,  # str - the name or ID of the block to assert against
+    input_id=None,  # str - optional - the input ID of the block to check
+)
+```
+
+**Example:**
+```python
+# Make sure our 'count' block received 5 signals
+self.assert_num_signals_processed(5, 'count')
+```
+
+### assert_signal_published
+
+Make sure that the service published a signal that looks like a given dictionary.
+
+```python
+def assert_signal_published(self,
+    signal_dict,  # dict - The dictionary of what a signal should look like
+)
+```
+
+**Example:**
+```python
+# Make sure our service published the right count signal
+self.assert_signal_published({
+    "count": 5,
+    "group": "group"
+})
+```
+
+---
+
 ## Asynchronous service tests
 
 There is an option to run the service tests asynchronously by setting the class attribute `synchronous=False`.
@@ -165,7 +311,7 @@ wait_for_processed_signals(block, number, timeout)
 
 ## Subscriber/Publisher topic validation with _jsonschema_
 
-You can also validate signals associated with _Publisher_ and _Subscriber_ blocks by putting a JSON-schema formatted JSON file in one of three locations: `project_name/tests`, `project_name/`, or one directory above `project_name/`. For more information, see <http://json-schema.org/> and <https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf>.
+You can also validate signals associated with _Publisher_ and _Subscriber_ blocks by putting a JSON-schema formatted JSON file called `topic_schema.json` in one of three locations: `project_name/tests`, `project_name/`, or one directory above `project_name/`. For more information, see <http://json-schema.org/> and <https://spacetelescope.github.io/understanding-json-schema/UnderstandingJSONSchema.pdf>.
 
 Signals published to the specified topics will be validated according to the file specification.
 
@@ -188,9 +334,9 @@ For instance, this JSON schema will make sure that all signals published to the 
 
 ---
 
-## Test
+## Running the tests
 
-Execute the service tests using a Python test runner.
+Execute the service tests using a Python test runner from your project directory.
 ```python
 py.test tests
 ```

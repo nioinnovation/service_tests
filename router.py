@@ -24,7 +24,6 @@ class ServiceTestRouter(BlockRouter):
 
     def notify_signals(self, block, signals, output_id):
         if not signals:
-            print("Block {} notified an empty signal list".format(block))
             return
         from_block_name = block.name()
         all_receivers = [block["receivers"] for block in self._execution
@@ -38,11 +37,12 @@ class ServiceTestRouter(BlockRouter):
             receiver_id = receiver["id"]
             input_id = receiver["input"]
             to_block = self._blocks[receiver_id]
-            receiver_name = to_block.name()
-            print("{} -> {}".format(from_block_name, receiver_name))
+            # Uncomment if you want debug prints for every notify
+            # receiver_name = to_block.name()
+            # print("{} -> {}".format(from_block_name, receiver_name))
             try:
                 cloned_signals = deepcopy(signals)
-            except:
+            except Exception:
                 cloned_signals = copy(signals)
             if input_id == "__default_terminal_value":
                 # don't include input_id if it's default terminal

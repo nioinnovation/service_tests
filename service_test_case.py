@@ -6,7 +6,7 @@ import re
 import sys
 import uuid
 from threading import Event
-from unittest.mock import MagicMock
+from unittest.mock import Mock, MagicMock
 
 from nio.block.base import Base
 from nio.block.context import BlockContext
@@ -208,7 +208,11 @@ class NioServiceTestCase(NIOTestCase):
 
     def _setup_block_persistence(self):
         def persit_load(persist_id, default=None):
-            return self.override_block_persistence().get(persist_id, default)
+            block_id = self.get_block_id(persist_id)
+            for p_key, p_val in self.override_block_persistence().items():
+                if self.get_block_id(p_key) == block_id:
+                    return p_val
+            return default
 
         Persistence.load = MagicMock(side_effect=persit_load)
 
@@ -257,13 +261,27 @@ class NioServiceTestCase(NIOTestCase):
 
     def _init_block(self, block_config, blocks):
         """create a mocked block for each block given in self.mock_blocks."""
-        if block_config["name"] in self.mock_blocks():
-            block = MagicMock()
+        block = None
+        for mock_block_key, mock_block_value in self.mock_blocks().items():
+            if self.get_block_id(mock_block_key) != block_config["name"]:
+                # This block key doesn't match this block
+                continue
+            if isinstance(mock_block_value, Mock):
+                # If they provided a Mock instance they want to mock
+                # the whole block object
+                block = mock_block_value
+            else:
+                # Not a mock means just mock the process_signals method
+                block = MagicMock()
+                block.process_signals.side_effect = mock_block_value
             block.name.return_value = block_config["name"]
             block.id.return_value = block_config["id"]
-            block.process_signals.side_effect = \
-                self.mock_blocks()[block_config["name"]]
-        else:
+            
+            # Only mock a block once in case it is provided twice somehow
+            break
+
+        if block is None:
+            # Wasn't mocked, instantiate the block the normal way
             block = [block for block in blocks if
                      block.__name__ == block_config["type"]][0]()
         return block
