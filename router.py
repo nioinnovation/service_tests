@@ -38,8 +38,8 @@ class ServiceTestRouter(BlockRouter):
             receiver_id = receiver["id"]
             input_id = receiver["input"]
             to_block = self._blocks[receiver_id]
-            receiver_name = to_block.name()
-            print("{} -> {}".format(from_block_name, receiver_name))
+            # receiver_name = to_block.name()
+            # print("{} -> {}".format(from_block_name, receiver_name))
             try:
                 cloned_signals = deepcopy(signals)
             except:
