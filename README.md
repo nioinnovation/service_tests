@@ -21,7 +21,6 @@ mkdir tests && touch tests/__init__.py
 Example project file structure:
 
 ```
-- nio.env
 - nio.conf
 - etc/
 - blocks/
