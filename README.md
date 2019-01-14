@@ -136,7 +136,7 @@ If referencing a block in a dictionary (like `self.processed_signals`) you must 
 
 So, to get the processed signals for a block named `'blocky'` you would do this:
 ```python
-self.published_signals[self.get_block_id('blocky')]
+self.processed_signals[self.get_block_id('blocky')]
 ```
 
 ---
