@@ -97,8 +97,9 @@ class NioServiceTestCase(NIOTestCase):
         """notify signals from a block. Adds to a blocks processed signals,
         but does not call block.process_signals.
         """
+        block_id = self.get_block_id(block_name)
         self._router.notify_signals(
-            self._blocks[block_name], signals, terminal)
+            self._blocks[block_id], signals, terminal)
 
     def mock_blocks(self):
         """Optionally create a mocked block class instead of the real thing
