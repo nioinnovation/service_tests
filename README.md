@@ -103,26 +103,19 @@ self.publish_signals(topic, signals)
 
 ---
 
-## Making assertions about signals
+## Getting processed and published signals
 
-Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's _Publisher_ blocks have published.
+Once a block processes a signal or the signal has been published from the service you can retrieve that signal.
 
-You can assert that your service published a certain number of signals using the service's assertion helper method:
+To get the signals published on a certain topic in a service use:
 ```python
-# Make sure our service published 3 signals
-self.assert_num_signals_published(3)
+self.published_signals[topic]
 ```
 
-Get the actual published signals of the service with:
+Similarly, you can get the signals processed by a block by using `self.processed_signals` and the block ID. (Note that it must be the block ID, not the block name. See the section below on block IDs vs names in service tests.)
 
 ```python
-self.published_signals
-```
-
-Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to emit a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
-
-```python
-self._scheduler.jump_ahead(seconds=10)
+self.processed_signals[block_id]
 ```
 
 ### Block names and block IDs
@@ -136,6 +129,54 @@ If referencing a block in a dictionary (like `self.processed_signals`) you must 
 So, to get the processed signals for a block named `'blocky'` you would do this:
 ```python
 self.processed_signals[self.get_block_id('blocky')]
+```
+
+## Making assertions about signals
+
+Most service unit tests will be structured so that you publish or emit a signal from a block at the beginning of a service and then inspect the output at the end of the service. The easiest way to make these assertions is by checking which signals the service's _Publisher_ blocks have published.
+
+You can assert that your service published a certain number of signals using the service's assertion helper method:
+```python
+# Make sure our service published 3 signals
+self.assert_num_signals_published(3)
+```
+
+Or, for specific topics:
+```python
+# Make sure we published 3 signals on the mydata.value topic
+self.assert_num_signals_published(3, 'mydata.value')
+```
+
+Instead of waiting for or depending on a service to publish signals, you can assert that a specific block has processed signals. This is useful if the termination of your service is not a publisher but some other kind of block like an API or database.
+```python
+# Make sure the MyBlock block has processed 3 signals
+self.assert_num_signals_processed(3, 'MyBlock')
+```
+
+## Service Test Timing
+
+nio services are real-time and asynchronous. The service test case framework alleviates some of the common challenges that come with testing complex applications like that.
+
+Sometimes making assertions immediately after publishing a signal into a service or block causes the assertions to fail. That is because the signal hasn't propogated through the nio service by the time you make your assertion. Rather than adding sleep in your tests or including while loops that wait for conditions, you can use the service test helper methods to wait for things to happen before making your assertions. 
+
+To wait until signals are published use the `wait_for_published_signals` method. This method will block until a number of signals have been published on the service.
+```python
+# Wait until a signal has been published on mydata.value before asserting, but no more than 3 seconds
+self.wait_for_published_signals(1, timeout=3)
+self.assert(my_assert_conditions)
+```
+
+Similarly, you can wait for blocks to process signals before proceeding in your test.
+```python
+# Wait until a signal has been processed by MyBlock before asserting, but no more than 3 seconds
+self.wait_for_processed_signals(1, 'MyBlock', timeout=3)
+self.assert(my_assert_conditions)
+```
+
+Most blocks also support the ability to fake time so you can jump ahead in time to check signals. For example, a _SignalTimeout_ block may be configured to emit a timeout signal after 10 seconds. Instead of making your test take 10 seconds, jump ahead in time with
+
+```python
+self._scheduler.jump_ahead(seconds=10)
 ```
 
 ---

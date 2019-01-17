@@ -1,3 +1,4 @@
+from collections import defaultdict
 from copy import copy
 import json
 import jsonschema
@@ -65,7 +66,7 @@ class NioServiceTestCase(NIOTestCase):
         # Subscribe to publishers in the service
         self._subscribers = {}
         # Capture published signals for assertions
-        self.published_signals = []
+        self.published_signals = defaultdict(list)
         # Set an event when those publishers publish signals
         self._publisher_event = Event()
         # Allow tests to publish signals to any subscriber
@@ -359,7 +360,7 @@ class NioServiceTestCase(NIOTestCase):
             self._publishers[publisher].open()
 
     def _teardown_pubsub(self):
-        self.published_signals = []
+        self.published_signals.clear()
         for subscriber in self._subscribers:
             self._subscribers[subscriber].close()
         for publisher in self._publishers:
@@ -369,7 +370,7 @@ class NioServiceTestCase(NIOTestCase):
     def _published_signals(self, signals, topic=None):
         # Save published signals for assertions
         self.schema_validate(signals, topic)
-        self.published_signals.extend(signals)
+        self.published_signals[topic].extend(signals)
         self._publisher_event.set()
         self._publisher_event.clear()
 
@@ -488,12 +489,15 @@ class NioServiceTestCase(NIOTestCase):
                         {topic: " ".join(str(e).replace("\n", " ").split())}
                     )
 
-    def assert_num_signals_published(self, expected):
+    def assert_num_signals_published(self, expected, topic=None):
         """asserts that the amount of published signals is equal to expected"""
         if not isinstance(expected, int):
             raise TypeError('Amount of published signals can only be an int. '
                             'Got type {}: {}'.format(type(expected), expected))
-        actual = len(self.published_signals)
+        if topic is None:
+            actual = len(self.published_signals)
+        else:
+            actual = len(self.published_signals[topic])
         if not actual == expected:
             raise AssertionError('Amount of published signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
@@ -517,9 +521,13 @@ class NioServiceTestCase(NIOTestCase):
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
 
-    def assert_signal_published(self, signal_dict):
+    def assert_signal_published(self, signal_dict, topic=None):
         """asserts signal_dict is in the list of published signals"""
-        for published_signal in self.published_signals:
+        if topic is None:
+            sigs_to_check = self.published_signals.values()
+        else:
+            sigs_to_check = self.published_signals[topic]
+        for published_signal in sigs_to_check:
             try:
                 self.assertDictEqual(published_signal.to_dict(), signal_dict)
                 return
