@@ -277,7 +277,15 @@ class NioServiceTestCase(NIOTestCase):
         """create a mocked block for each block given in self.mock_blocks."""
         block = None
         for mock_block_key, mock_block_value in self.mock_blocks().items():
-            if self.get_block_id(mock_block_key) != block_config["name"]:
+            # If the mock_block_key is a service block ID (multiple of the
+            # same block configs in one service) then get_block_id will fail
+            # at this point, since our service blocks aren't created yet
+            # We'll just use the straight mock_block_key in this case
+            try:
+                mock_block_key = self.get_block_id(mock_block_key)
+            except KeyError:
+                pass
+            if mock_block_key != block_config["name"]:
                 # This block key doesn't match this block
                 continue
             if isinstance(mock_block_value, Mock):
