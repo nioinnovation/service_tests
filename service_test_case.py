@@ -238,6 +238,7 @@ class NioServiceTestCase(NIOTestCase):
             # use mapping name for block
             block_config["name"] = service_block_id
             block_config["id"] = block_config.get('id', uuid.uuid4())
+            self._override_local_pubsub_block(block_config)
             # instantiate the block
             block = self._init_block(block_config, blocks)
             block_config = self._override_block_config(block_config)
@@ -249,6 +250,17 @@ class NioServiceTestCase(NIOTestCase):
         self._router.configure(RouterContext(
             execution=self.service_config.get("execution", []),
             blocks=self._blocks))
+
+    def _override_local_pubsub_block(self, block_config):
+        """ Set local topic prefixes to empty strings for testing.
+
+        This allows pub/sub topics defined in tests and topic schemas to ignore
+        the presence of a local identifier, which is a rather advanced topic.
+        To not perform this empty string replacement override this method with
+        a simple pass or no-op.
+        """
+        if block_config['type'] in ('LocalPublisher', 'LocalSubscriber'):
+            block_config['local_identifier'] = ''
 
     def start(self):
         # Start blocks
