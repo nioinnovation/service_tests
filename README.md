@@ -82,6 +82,8 @@ Each test class can only contain unit tests for one service. These unit tests ar
 
 **Override `subscriber_topics` and `publisher_topics`**<br>If the service has _Subscriber_ or _Publisher_ blocks, override these methods to return a list of the topic names in your service. This allows your tests to publish test signals to the subscribers and to assert against the published signals from the service.
 
+If your service uses _LocalPublisher_ or _LocalSubscriber_ blocks, still use the regular pub/sub topic names provided in your block config. You do not need to prepend the local identifier prefix that those blocks normally do.
+
 **Add `env_vars`**<br>These service tests will not read from any of your project `.env` files so if you want to use some environment variables, override this method and have it return a dictionary that maps environment variable names to values.
 
 ---
