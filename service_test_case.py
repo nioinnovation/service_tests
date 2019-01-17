@@ -1,3 +1,4 @@
+from collections import defaultdict
 from copy import copy
 import json
 import jsonschema
@@ -65,7 +66,7 @@ class NioServiceTestCase(NIOTestCase):
         # Subscribe to publishers in the service
         self._subscribers = {}
         # Capture published signals for assertions
-        self.published_signals = []
+        self.published_signals = defaultdict(list)
         # Set an event when those publishers publish signals
         self._publisher_event = Event()
         # Allow tests to publish signals to any subscriber
@@ -97,8 +98,9 @@ class NioServiceTestCase(NIOTestCase):
         """notify signals from a block. Adds to a blocks processed signals,
         but does not call block.process_signals.
         """
+        block_id = self.get_block_id(block_name)
         self._router.notify_signals(
-            self._blocks[block_name], signals, terminal)
+            self._blocks[block_id], signals, terminal)
 
     def mock_blocks(self):
         """Optionally create a mocked block class instead of the real thing
@@ -237,6 +239,7 @@ class NioServiceTestCase(NIOTestCase):
             # use mapping name for block
             block_config["name"] = service_block_id
             block_config["id"] = block_config.get('id', uuid.uuid4())
+            self._override_local_pubsub_block(block_config)
             # instantiate the block
             block = self._init_block(block_config, blocks)
             block_config = self._override_block_config(block_config)
@@ -248,6 +251,17 @@ class NioServiceTestCase(NIOTestCase):
         self._router.configure(RouterContext(
             execution=self.service_config.get("execution", []),
             blocks=self._blocks))
+
+    def _override_local_pubsub_block(self, block_config):
+        """ Set local topic prefixes to empty strings for testing.
+
+        This allows pub/sub topics defined in tests and topic schemas to ignore
+        the presence of a local identifier, which is a rather advanced topic.
+        To not perform this empty string replacement override this method with
+        a simple pass or no-op.
+        """
+        if block_config['type'] in ('LocalPublisher', 'LocalSubscriber'):
+            block_config['local_identifier'] = ''
 
     def start(self):
         # Start blocks
@@ -346,7 +360,7 @@ class NioServiceTestCase(NIOTestCase):
             self._publishers[publisher].open()
 
     def _teardown_pubsub(self):
-        self.published_signals = []
+        self.published_signals.clear()
         for subscriber in self._subscribers:
             self._subscribers[subscriber].close()
         for publisher in self._publishers:
@@ -356,7 +370,7 @@ class NioServiceTestCase(NIOTestCase):
     def _published_signals(self, signals, topic=None):
         # Save published signals for assertions
         self.schema_validate(signals, topic)
-        self.published_signals.extend(signals)
+        self.published_signals[topic].extend(signals)
         self._publisher_event.set()
         self._publisher_event.clear()
 
@@ -475,12 +489,15 @@ class NioServiceTestCase(NIOTestCase):
                         {topic: " ".join(str(e).replace("\n", " ").split())}
                     )
 
-    def assert_num_signals_published(self, expected):
+    def assert_num_signals_published(self, expected, topic=None):
         """asserts that the amount of published signals is equal to expected"""
         if not isinstance(expected, int):
             raise TypeError('Amount of published signals can only be an int. '
                             'Got type {}: {}'.format(type(expected), expected))
-        actual = len(self.published_signals)
+        if topic is None:
+            actual = len(self.published_signals)
+        else:
+            actual = len(self.published_signals[topic])
         if not actual == expected:
             raise AssertionError('Amount of published signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
@@ -504,9 +521,13 @@ class NioServiceTestCase(NIOTestCase):
             raise AssertionError('Amount of processed signals not equal to {}.'
                                  ' Actual: {}'.format(expected, actual))
 
-    def assert_signal_published(self, signal_dict):
+    def assert_signal_published(self, signal_dict, topic=None):
         """asserts signal_dict is in the list of published signals"""
-        for published_signal in self.published_signals:
+        if topic is None:
+            sigs_to_check = self.published_signals.values()
+        else:
+            sigs_to_check = self.published_signals[topic]
+        for published_signal in sigs_to_check:
             try:
                 self.assertDictEqual(published_signal.to_dict(), signal_dict)
                 return
