@@ -379,13 +379,12 @@ class NioServiceTestCase(NIOTestCase):
 
     def _published_signals(self, signals, topic=None):
         # Save published signals for assertions
-        print("SIGNALS PUBLISHED")
         try:
             # Try to interpret the signals as a locally published list of
             # signals. If this fails it means they were published from a
             # regular publisher
             signals = pickle.loads(b64decode(signals[0].signals))
-        except:
+        except Exception:
             pass
         self.schema_validate(signals, topic)
         self.published_signals[topic].extend(signals)
