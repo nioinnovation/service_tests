@@ -281,13 +281,17 @@ Make sure a certain number of signals was published by the service.
 ```python
 def assert_num_signals_published(self,
     expected,  # int - the number of signals expected
+    topic=None,  # string - The optional topic to assert against. If omitted this will check against all topics
 )
 ```
 
 **Example:**
 ```python
-# Make sure 5 signals were published by the service
+# Make sure 5 signals were published by the service on all topics
 self.assert_num_signals_published(5)
+
+# Make sure 2 signals were published by the service on the 'counts' topic
+self.assert_num_signals_published(2, topic='counts')
 ```
 
 ### assert_num_signals_processed
@@ -315,16 +319,17 @@ Make sure that the service published a signal that looks like a given dictionary
 ```python
 def assert_signal_published(self,
     signal_dict,  # dict - The dictionary of what a signal should look like
+    topic=None,  # string - The optional topic to assert against. If omitted this will check against all topics
 )
 ```
 
 **Example:**
 ```python
-# Make sure our service published the right count signal
+# Make sure our service published the right count signal on the 'counts' topic
 self.assert_signal_published({
     "count": 5,
     "group": "group"
-})
+}, topic='counts')
 ```
 
 ---

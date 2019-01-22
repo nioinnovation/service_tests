@@ -1,8 +1,10 @@
+from base64 import b64decode
 from collections import defaultdict
 from copy import copy
 import json
 import jsonschema
 import os
+import pickle
 import re
 import sys
 import uuid
@@ -318,7 +320,7 @@ class NioServiceTestCase(NIOTestCase):
     def _replace_env_var(self, config, name, value):
         for property in config:
             if isinstance(config[property], str):
-                config[property] = re.sub("\[\[" + name + "\]\]",
+                config[property] = re.sub("\\[\\[" + name + "\\]\\]",
                                           str(value),
                                           config[property])
             elif isinstance(config[property], dict):
@@ -327,7 +329,7 @@ class NioServiceTestCase(NIOTestCase):
                 new_list = []
                 for item in config[property]:
                     if isinstance(item, str):
-                        new_list.append(re.sub("\[\[" + name + "\]\]",
+                        new_list.append(re.sub("\\[\\[" + name + "\\]\\]",
                                                str(value),
                                                item))
                     elif isinstance(item, dict):
@@ -377,6 +379,13 @@ class NioServiceTestCase(NIOTestCase):
 
     def _published_signals(self, signals, topic=None):
         # Save published signals for assertions
+        try:
+            # Try to interpret the signals as a locally published list of
+            # signals. If this fails it means they were published from a
+            # regular publisher
+            signals = pickle.loads(b64decode(signals[0].signals))
+        except Exception:
+            pass
         self.schema_validate(signals, topic)
         self.published_signals[topic].extend(signals)
         self._publisher_event.set()
