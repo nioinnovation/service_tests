@@ -36,6 +36,13 @@ Install _jsonschema_ for publisher/subscriber topic validation.
 pip3 install jsonschema
 ```
 
+You may desire to do string format checking on your fields too. For example, make sure a string is an ISO-8601 formatted datetime or a string is a valid email address. To do that, install the `format` extra for `jsonschema`.
+
+```
+pip3 install jsonschema[format]
+```
+
+
 ---
 
 ## Setting up your test class

@@ -497,7 +497,16 @@ class NioServiceTestCase(NIOTestCase):
         if topic in self._schema:
             for signal in signals:
                 try:
-                    jsonschema.validate(signal.to_dict(), self._schema[topic])
+                    validate_args = {}
+                    if hasattr(jsonschema, 'draft4_format_checker'):
+                        validate_args['format_checker'] = \
+                            jsonschema.draft4_format_checker
+                    jsonschema.validate(
+                        signal.to_dict(),
+                        self._schema[topic],
+                        **validate_args,
+                    )
+
                 except Exception as e:
                     print("Topic {} received an invalid signal: {}"
                           .format(topic, signal))
