@@ -504,8 +504,9 @@ class NioServiceTestCase(NIOTestCase):
                         # Add a resolver so we can use references in our
                         # schema file
                         'resolver': jsonschema.RefResolver(
-                            'file://{}/'.format(
-                                os.path.dirname(self._schema_file)),
+                            'file:///{}/'.format(
+                                os.path.dirname(self._schema_file)
+                                .replace("\\", "/")),
                             self._schema),
                     }
                     if hasattr(jsonschema, 'draft4_format_checker'):
