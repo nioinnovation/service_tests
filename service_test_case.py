@@ -4,6 +4,7 @@ from copy import copy
 import json
 import jsonschema
 import os
+import os.path
 import pickle
 import re
 import sys
@@ -75,6 +76,7 @@ class NioServiceTestCase(NIOTestCase):
         self._publishers = {}
         # Json schema for publisher and subscriber validation
         self._schema = {}
+        self._schema_file = None
 
     @property
     def processed_signals(self):
@@ -476,6 +478,7 @@ class NioServiceTestCase(NIOTestCase):
                 with open(file_path, 'r') as json_file:
                     try:
                         self._schema = json.load(json_file)
+                        self._schema_file = file_path
                     except Exception as e:
                         self.fail(
                             "Problem parsing topic validation file located at "
@@ -498,7 +501,15 @@ class NioServiceTestCase(NIOTestCase):
         if topic in self._schema:
             for signal in signals:
                 try:
-                    validate_args = {}
+                    validate_args = {
+                        # Add a resolver so we can use references in our
+                        # schema file
+                        'resolver': jsonschema.RefResolver(
+                            'file:///{}/'.format(
+                                os.path.dirname(self._schema_file)
+                                .replace("\\", "/")),
+                            self._schema),
+                    }
                     if hasattr(jsonschema, 'draft4_format_checker'):
                         validate_args['format_checker'] = \
                             jsonschema.draft4_format_checker
