@@ -320,7 +320,7 @@ class NioServiceTestCase(NIOTestCase):
     def _replace_env_var(self, config, name, value):
         for property in config:
             if isinstance(config[property], str):
-                config[property] = re.sub("\\[\\[" + name + "\\]\\]",
+                config[property] = re.sub("\\[\\[\\s*" + name + "\\s*\\]\\]",
                                           str(value),
                                           config[property])
             elif isinstance(config[property], dict):
