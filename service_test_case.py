@@ -505,7 +505,8 @@ class NioServiceTestCase(NIOTestCase):
                         # schema file
                         'resolver': jsonschema.RefResolver(
                             'file://{}/'.format(
-                                os.path.dirname(self._schema_file)), None),
+                                os.path.dirname(self._schema_file)),
+                            self._schema),
                     }
                     if hasattr(jsonschema, 'draft4_format_checker'):
                         validate_args['format_checker'] = \
