@@ -265,11 +265,22 @@ def env_vars(self):
 
 ### Custom Block Persistence
 
-To simulate and test a service's behavior given specific block persistence values, return the desired initial persistence state in your service test's `override_block_persistence` method. This example has the `'counter_block'` block start off with a cumulative count of 10 rather than the default of 0.
+To simulate and test a service's behavior given specific block persistence values, return the desired initial persistence state in your service test's `override_block_persistence` method. This example has the [_Counter_](https://blocks.n.io/Counter) block start off with a `cumulative_count` of 10 rather than the default of 0.
+
+In the `counter_block` source code, locate the overridden method `persisted_values`. Each of the values returned by this method is a value which can be overridden with a custom value for testing.
+
+```python
+def persisted_values(self):
+        """Persist values with block mixin"""
+        return ["_cumulative_count", "_last_reset", "_groups"]
+```
+
+For this block, defining a custom `cumulative_count` value looks like this:
+
 ```python
 def override_block_persistence(self):
     return {
-        'counter_block': {
+        '<block_name>|<block_id>': {
             '_cumulative_count': { None: 10 }
         }
     }
